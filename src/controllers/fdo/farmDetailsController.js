@@ -1,0 +1,67 @@
+const farmDetailsService = require('../../services/fdo/farmDetailsService');
+
+const registerFarmDetails = async (req, res) => {
+  try {
+    const farmData = req.body;
+
+    const result = await farmDetailsService.createFarmDetails(farmData);
+    
+    res.status(201).json({
+      success: true,
+      message: 'Farm details created successfully',
+      data: result
+    });
+  } catch (error) {
+    if (error.message.includes('Validation error') || error.message.includes('already exists')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create farm details',
+      error: error.message
+    });
+  }
+};
+
+const getFarmDetailsByFarmId = async (req, res) => {
+  try {
+    const { farmId } = req.params;
+    
+    if (!farmId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Farm ID is required'
+      });
+    }
+
+    const result = await farmDetailsService.getFarmDetailsByFarmId(farmId);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Farm details fetched successfully',
+      data: result
+    });
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch farm details',
+      error: error.message
+    });
+  }
+};
+
+module.exports = {
+  registerFarmDetails,
+  getFarmDetailsByFarmId
+};
