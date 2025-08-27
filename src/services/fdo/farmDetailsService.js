@@ -27,7 +27,7 @@ const createFarmDetails = async (farmData) => {
     }
 
     // Validation for specific fields
-    const validFarmStatuses = ['ACTIVE', 'INACTIVE', 'PIPELINE'];
+    const validFarmStatuses = ['Active', 'Inactive', 'Pipeline'];
     const validProcurementModels = ['A', 'B', 'C', 'D'];
     const validSalutations = ['Mr.', 'Mrs.', 'Smt.', 'Miss'];
     const validGenders = ['Male', 'Female', 'Other'];
