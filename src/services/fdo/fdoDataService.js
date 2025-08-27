@@ -4,6 +4,7 @@ const { Op } = require('sequelize');
 const { sequelize } = require('../../shared/config/sequelize-db');
 const FdoAccount = require('../../models/fdo/FdoAccounts');
 const FarmerData = require('../../models/farmer/FarmerData');
+const FarmDetails = require('../../models/fdo/FarmDetails');
 
 const generateCredentials = (fdoName, phone, assignedFarmId) => {
   const firstWord = fdoName.split(' ')[0].toLowerCase();
@@ -138,22 +139,42 @@ exports.getSpecificFdoData = async (fdoId, is_new) => {
   
   if (!fdo) throw new Error('FDO not found');
   
-  if (is_new !== undefined) {
-    // Filter farms by is_new
-    const filteredFarmIds = fdo.assigned_farm_id.filter(farm => farm.is_new == is_new);
-    
-    return {
-      data: {
-        ...fdo.toJSON(),
-        assigned_farm_id: filteredFarmIds
-      },
-      total_farms: filteredFarmIds.length
-    };
-  } else {
-    return {
-      data: fdo.toJSON()
-    };
-  }
+  const filteredFarms = is_new !== undefined 
+    ? fdo.assigned_farm_id.filter(farm => farm.is_new == is_new)
+    : fdo.assigned_farm_id;
+  
+  const farmIds = filteredFarms.map(farm => farm.farm_id);
+  
+  const [farmerData, farmDetails] = await Promise.all([
+    FarmerData.findAll({
+      where: { farm_id: { [Op.in]: farmIds } },
+      attributes: ['farm_id', 'farm_name']
+    }),
+    FarmDetails.findAll({
+      where: { farm_id: { [Op.in]: farmIds } },
+      attributes: ['farm_id', 'address_line1', 'farm_status']
+    })
+  ]);
+  
+  const farmMap = {};
+  farmerData.forEach(farm => farmMap[farm.farm_id] = { farm_name: farm.farm_name });
+  farmDetails.forEach(farm => {
+    if (farmMap[farm.farm_id]) {
+      farmMap[farm.farm_id] = {
+        ...farmMap[farm.farm_id],
+        farm_address: farm.address_line1,
+        status: is_new == 0 ? farm.farm_status : null,
+        total_animals: null
+      };
+    }
+  });
+  
+  const enhancedFarms = filteredFarms.map(farm => ({ ...farm, ...farmMap[farm.farm_id] }));
+  
+  return {
+    data: { ...fdo.toJSON(), assigned_farm_id: enhancedFarms },
+    ...(is_new !== undefined && { total_farms: enhancedFarms.length })
+  };
 };
 
 // Get all FDO data
