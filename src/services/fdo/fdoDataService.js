@@ -162,7 +162,7 @@ exports.getSpecificFdoData = async (fdoId, is_new) => {
     if (farmMap[farm.farm_id]) {
       farmMap[farm.farm_id] = {
         ...farmMap[farm.farm_id],
-        farm_address: farm.address_line1,
+        farm_address: is_new == 0 ? farm.address_line1 : null,
         status: is_new == 0 ? farm.farm_status : null,
         total_animals: null
       };
