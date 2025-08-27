@@ -29,7 +29,7 @@ module.exports = {
 
       // A. Organizational Information
       farm_status: {
-        type: ENUM('ACTIVE', 'INACTIVE', 'PIPELINE'),
+        type: ENUM('Active', 'Inactive', 'Pipeline'),
         allowNull: false,
         defaultValue: 'ACTIVE'
       },
