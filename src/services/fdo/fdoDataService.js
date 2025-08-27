@@ -148,7 +148,7 @@ exports.getSpecificFdoData = async (fdoId, is_new) => {
   const [farmerData, farmDetails] = await Promise.all([
     FarmerData.findAll({
       where: { farm_id: { [Op.in]: farmIds } },
-      attributes: ['farm_id', 'farm_name', 'phone']
+      attributes: ['farm_id', 'farm_name', 'phone', 'farmer_name']
     }),
     FarmDetails.findAll({
       where: { farm_id: { [Op.in]: farmIds } },
@@ -157,7 +157,7 @@ exports.getSpecificFdoData = async (fdoId, is_new) => {
   ]);
   
   const farmMap = {};
-  farmerData.forEach(farm => farmMap[farm.farm_id] = { farm_name: farm.farm_name, farm_phone:farm.phone });
+  farmerData.forEach(farm => farmMap[farm.farm_id] = { farm_name: farm.farm_name, farm_phone:farm.phone, farmer_name: farm.farmer_name });
   farmDetails.forEach(farm => {
     if (farmMap[farm.farm_id]) {
       farmMap[farm.farm_id] = {
