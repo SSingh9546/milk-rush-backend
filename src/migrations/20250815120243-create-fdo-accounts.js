@@ -11,8 +11,9 @@ module.exports = {
         primaryKey: true
       },
       emp_id: {
-        type: DataTypes.STRING(50),
-        allowNull: false
+        type: Sequelize.STRING(50),
+        allowNull: false,
+        unique: true
       },
       fdo_name: {
         type: Sequelize.STRING(100),
