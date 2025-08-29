@@ -1,6 +1,9 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+// 👇 Force-load mysql2 so Sequelize can resolve it in serverless
+require('mysql2');
+
 const sequelize = new Sequelize(
   process.env.MYSQL_DATABASE,
   process.env.MYSQL_USER,
@@ -14,8 +17,8 @@ const sequelize = new Sequelize(
       max: 10,
       min: 0,
       acquire: 30000,
-      idle: 10000
-    }
+      idle: 10000,
+    },
   }
 );
 
