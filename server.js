@@ -1,3 +1,4 @@
+// server.js
 require('dotenv').config({ quiet: true });
 const express = require('express');
 const cors = require('cors');
@@ -40,32 +41,39 @@ app.get('/health', (_req, res) =>
 app.use((req, res) => res.status(404).json({ ok: false, msg: 'Route not found' }));
 app.use((err, _req, res, _next) => {
   console.error('💥', err);
-  res.status(500).json({ ok: false, msg: 'Internal error', err: NODE_ENV === 'production' ? undefined : err.message });
+  res.status(500).json({
+    ok: false,
+    msg: 'Internal error',
+    err: NODE_ENV === 'production' ? undefined : err.message
+  });
 });
 
-// start (with your preferred logs)
-(async () => {
-  try {
-    await connectMySQL?.();
-  } catch (err) {
-    console.error('❌ DB connection failed:', err.message);
-    process.exit(1);
-  }
+// ---- Local dev only (Vercel sets process.env.VERCEL) ----
+if (!process.env.VERCEL) {
+  (async () => {
+    try {
+      await connectMySQL?.();
+    } catch (err) {
+      console.error('❌ DB connection failed:', err.message);
+      process.exit(1);
+    }
 
-  const server = app.listen(PORT, () => {
-    console.log(`
+    const server = app.listen(PORT, () => {
+      console.log(`
 🚀 Server running on port ${PORT}
 📍 Environment: ${NODE_ENV}
 🌐 URL: http://localhost:${PORT}
 🏥 Health: http://localhost:${PORT}/health
 ⏰ Started: ${new Date().toISOString()}
-    `);
-  });
+      `);
+    });
 
-  server.on('error', (error) => {
-    console.error('❌ Server failed to start:', error.message);
-    process.exit(1);
-  });
-})();
+    server.on('error', (error) => {
+      console.error('❌ Server failed to start:', error.message);
+      process.exit(1);
+    });
+  })();
+}
 
+// Always export the Express app (Vercel uses this)
 module.exports = app;
