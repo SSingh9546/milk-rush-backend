@@ -36,6 +36,16 @@ app.get('/health', (_req, res) =>
     });
 })();
 
+// Root route (homepage for your backend)
+app.get('/', (_req, res) => {
+  res.json({
+    ok: true,
+    msg: '🚀 Backend is live and running!',
+    env: NODE_ENV,
+    time: new Date().toISOString()
+  });
+});
+
 // 404 + error
 app.use((req, res) => res.status(404).json({ ok: false, msg: 'Route not found' }));
 app.use((err, _req, res, _next) => {
