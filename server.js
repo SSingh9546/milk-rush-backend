@@ -20,7 +20,7 @@ app.get('/health', (_req, res) =>
   res.json({ ok: true, env: NODE_ENV, ts: new Date().toISOString(), uptime: process.uptime() })
 );
 
-// auto-mount all v1 routes from src/routes/api/v1
+// auto-mount all v1 routes
 (() => {
   const v1Dir = path.join(__dirname, 'src', 'routes', 'api', 'v1');
   if (!fs.existsSync(v1Dir)) {
@@ -53,7 +53,6 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ ok: false, msg: 'Internal error', err: NODE_ENV === 'production' ? undefined : err.message });
 });
 
-// start (with your preferred logs)
 (async () => {
   try {
     await connectMySQL?.();
