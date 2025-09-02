@@ -104,6 +104,10 @@ const AnimalBioDetail = sequelize.define('AnimalBioDetail', {
   days_in_milk: {
     type: DataTypes.INTEGER,
     allowNull: true
+  },
+  previous_days_in_milk: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   }
 }, {
   tableName: 'animal_bio_details',

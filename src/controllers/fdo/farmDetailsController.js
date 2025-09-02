@@ -3,8 +3,10 @@ const farmDetailsService = require('../../services/fdo/farmDetailsService');
 const registerFarmDetails = async (req, res) => {
   try {
     const farmData = req.body;
+    const fdoAssignedFarmId = req.fdo.assignedFarmIds;
+    const fdoEmpId = req.fdo.empId;
 
-    const result = await farmDetailsService.createFarmDetails(farmData);
+    const result = await farmDetailsService.createFarmDetails(farmData, fdoAssignedFarmId, fdoEmpId);
     
     res.status(201).json({
       success: true,
@@ -30,7 +32,8 @@ const registerFarmDetails = async (req, res) => {
 const getFarmDetailsByFarmId = async (req, res) => {
   try {
     const { farmId } = req.params;
-    
+    const fdoAssignedFarmId = req.fdo.assignedFarmIds;
+
     if (!farmId) {
       return res.status(400).json({
         success: false,
@@ -38,7 +41,7 @@ const getFarmDetailsByFarmId = async (req, res) => {
       });
     }
 
-    const result = await farmDetailsService.getFarmDetailsByFarmId(farmId);
+    const result = await farmDetailsService.getFarmDetailsByFarmId(farmId, fdoAssignedFarmId);
     
     res.status(200).json({
       success: true,

@@ -1,9 +1,8 @@
-const FdoAccounts = require('../../../models/fdo/FdoAccounts');
-const FarmDetail = require('../../../models/fdo/FarmDetails');
-const FarmAnimal = require('../../../models/fdo/FarmAnimals');
-const AnimalBioDetail = require('../../../models/fdo/AnimalBioDetails');
-const { sequelize } = require('../../../shared/config/sequelize-db');
-const { Op } = require('sequelize');
+const FarmDetail = require('../../models/fdo/FarmDetails');
+const FarmAnimal = require('../../models/fdo/FarmAnimals');
+const AnimalBioDetail = require('../../models/fdo/AnimalBioDetails');
+const AnimalRule = require('../../models/fdo/AnimalRules');
+const { sequelize } = require('../../shared/config/sequelize-db');
 
 const calculateAge = (dob) => {
     if (!dob) return null;
@@ -14,7 +13,7 @@ const calculateAge = (dob) => {
     return diffMonths;
 };
 
-const registerAnimal = async (animalData) => {
+const registerAnimal = async (animalData, fdoAssignedFarmId) => {
     const transaction = await sequelize.transaction();
     
     try {
@@ -73,30 +72,22 @@ const registerAnimal = async (animalData) => {
             calf_details
         } = animalData;
 
-       // Validation 1: Check if farm_id is registered in fdo_accounts with is_new=0
-        const fdoAccount = await FdoAccounts.findOne({
-            where: sequelize.where(
-                sequelize.fn('JSON_SEARCH', sequelize.col('assigned_farm_id'), 'one', farm_id),
-                {
-                    [Op.ne]: null
-                }
-            )
-        });
+        // 1. Check that farm_id is assigned to the FDO
+        if (
+            !fdoAssignedFarmId ||
+            !Array.isArray(fdoAssignedFarmId) ||
+            !fdoAssignedFarmId.some(farm => farm.farm_id === farm_id)
+        ) {
+            throw new Error('Farm is not assigned to this FDO');
+        }
 
-        if (fdoAccount) {
-            const assignedFarms = fdoAccount.assigned_farm_id || [];
-            const farmExists = assignedFarms.some(farm => 
-                farm.farm_id === farm_id && farm.is_new === 0
-            );
-            
-            if (!farmExists) {
-                throw new Error('Farm is not registered');
-            }
-        } else {
+        // 2. Check that farm_id is assigned with is_new = 0 (registered)
+        const assignedFarm = fdoAssignedFarmId.find(farm => farm.farm_id === farm_id);
+        if (!assignedFarm || assignedFarm.is_new !== 0) {
             throw new Error('Farm is not registered');
         }
 
-        // Validation 2: Check if registration_id already exists
+        // 3. Check if registration_id already exists
         if (registration_id) {
             const existingAnimal = await FarmAnimal.findOne({
                 where: { registration_id: registration_id }
@@ -176,7 +167,8 @@ const registerAnimal = async (animalData) => {
         }
 
         let calves = [];
-        
+        const calfAge = calculateAge(last_calving_date);
+        const is_animal_calf = calfAge !== null && calfAge <= 6 ? 1 : 0;
         // Step 3: Create calf records if calf_details provided
         if (calf_details && Array.isArray(calf_details) && calf_details.length > 0) {
             for (const calfDetail of calf_details) {
@@ -189,8 +181,9 @@ const registerAnimal = async (animalData) => {
                             dam_id: mainAnimal.id,
                             gender: gender,
                             dob:last_calving_date,
+                            age: calfAge,
                             born_status: born_status,
-                            is_calf: 1,
+                            is_calf: is_animal_calf,
                             is_animal: 0
                         }, { transaction });
                         
@@ -214,29 +207,20 @@ const registerAnimal = async (animalData) => {
     }
 };
 
-const getAnimalsByFarmId = async (farm_id) => {
+const getAnimalsByFarmId = async (farm_id, fdoAssignedFarmId) => {
     try {
-        const fdoAccount = await FdoAccounts.findOne({
-            where: sequelize.where(
-                sequelize.fn('JSON_SEARCH', sequelize.col('assigned_farm_id'), 'one', farm_id),
-                {
-                    [Op.ne]: null
-                }
-            )
-        });
+        if (
+            !farm_id ||
+            !Array.isArray(fdoAssignedFarmId) ||
+            !fdoAssignedFarmId.some(farm => farm.farm_id === farm_id)
+        ) {
+            const error = new Error('Farm is not assigned to this FDO');
+            error.statusCode = 400;
+            throw error;
+        }
 
-        if (fdoAccount) {
-            const assignedFarms = fdoAccount.assigned_farm_id || [];
-            const farmExists = assignedFarms.some(farm => 
-                farm.farm_id === farm_id && farm.is_new === 0
-            );
-            
-            if (!farmExists) {
-                const error = new Error('Farm is not registered');
-                error.statusCode = 400;
-                throw error;
-            }
-        } else {
+        const assignedFarm = fdoAssignedFarmId.find(farm => farm.farm_id === farm_id);
+        if (!assignedFarm || assignedFarm.is_new !== 0) {
             const error = new Error('Farm is not registered');
             error.statusCode = 400;
             throw error;
@@ -286,7 +270,7 @@ const getAnimalsByFarmId = async (farm_id) => {
     }
 };
 
-const getAnimalDetailsByAnimalId = async (animal_id) => {
+const getAnimalDetailsByAnimalId = async (animal_id, fdoAssignedFarmId) => {
     try {
         // Check if animal exists
         const animal = await FarmAnimal.findOne({
@@ -297,6 +281,19 @@ const getAnimalDetailsByAnimalId = async (animal_id) => {
             }]
         });
 
+        // Check if animal's farm_id is associated with this FDO
+        const farm_id = animal.farm_id;
+        if (
+            !farm_id ||
+            !Array.isArray(fdoAssignedFarmId) ||
+            !fdoAssignedFarmId.some(farm => farm.farm_id === farm_id)
+        ) {
+            const error = new Error('Animal is not associated with this FDO.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // If animal not found
         if (!animal) {
             const error = new Error('Animal is not registered');
             error.statusCode = 404;
@@ -396,8 +393,167 @@ const getAnimalDetailsByAnimalId = async (animal_id) => {
     }
 };
 
+const getCalfDetailsByCalfId = async (calfId, fdoAssignedFarmId) => {
+    try {
+        // Find calf in farm_animals table
+        const calfData = await FarmAnimal.findOne({
+            where: { id: calfId }
+        });
+
+        if (!calfData) {
+            return null;
+        }
+
+        // Check if dam_id is null
+        if (!calfData || calfData.dam_id === null) {
+            const error = new Error('This is not a Calf Id');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Check if calf's farm_id is associated with this FDO
+        const farm_id = calfData.farm_id;
+        if (
+            !farm_id ||
+            !Array.isArray(fdoAssignedFarmId) ||
+            !fdoAssignedFarmId.some(farm => farm.farm_id === farm_id)
+        ) {
+            const error = new Error('Calf is not associated with this FDO.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Calculate age in months from DOB
+        const currentDate = new Date();
+        const dobDate = new Date(calfData.dob);
+        const ageInMonths = (currentDate.getFullYear() - dobDate.getFullYear()) * 12 + 
+                           (currentDate.getMonth() - dobDate.getMonth());
+
+        let responseData = {
+            calf_details: calfData.toJSON()
+        };
+
+        // Check if calf is > 6 months old
+        if (ageInMonths > 6) {
+            // Fetch rule = 2
+            const animalRule = await AnimalRule.findOne({
+                where: { id: 2 }
+            });
+
+            if (animalRule) {
+                const ruleData = animalRule.toJSON();
+                responseData.calf_details.lactation_status = ruleData.lactation_status;
+                responseData.calf_details.breeding_status = ruleData.breeding_status;
+                responseData.calf_details.physiological_stage = ruleData.physiological_stage;
+                responseData.calf_details.lactation_number = ruleData.calving_number;
+                responseData.calf_details.parity_number = ruleData.calving_number;
+                responseData.calf_details.rule_description = ruleData.rule_description;
+            }
+        } else {
+            // Fetch rule= 1
+            const animalRule = await AnimalRule.findOne({
+                where: { id: 1 }
+            });
+
+            if (animalRule) {
+                const ruleData = animalRule.toJSON();
+                responseData.calf_details.lactation_status = ruleData.lactation_status;
+                responseData.calf_details.breeding_status = ruleData.breeding_status;
+                responseData.calf_details.physiological_stage = ruleData.physiological_stage;
+                responseData.calf_details.lactation_number = ruleData.calving_number;
+                responseData.calf_details.parity_number = ruleData.calving_number;
+                responseData.calf_details.rule_description = ruleData.rule_description;
+            }
+        }
+        return responseData;
+
+    } catch (error) {
+        console.error('Error in getCalfDetailsById service:', error);
+        throw error;
+    }
+};
+
+const updateCalfById = async (calfId, updateData, fdoAssignedFarmId) => {
+    try {
+        // Check if calf exists
+        const existingCalf = await FarmAnimal.findOne({
+            where: { id: calfId }
+        });
+        
+        // If calf not found
+        if (!existingCalf) {
+            return null;
+        }
+
+        // Check if calf's farm_id is associated with this FDO
+        const farm_id = existingCalf.farm_id;
+        const updateFarmId = updateData.farm_id;
+
+        const isFarmAssociated = Array.isArray(fdoAssignedFarmId) && fdoAssignedFarmId.some(farm => farm.farm_id === farm_id);
+        const isUpdateFarmAssociated = !updateFarmId || (Array.isArray(fdoAssignedFarmId) && fdoAssignedFarmId.some(farm => farm.farm_id === updateFarmId));
+
+        if (!farm_id || !isFarmAssociated) {
+            const error = new Error('Given Calf Id is not assigned to this FDO.');
+            error.statusCode = 400;
+            throw error;
+        }
+        if (!isUpdateFarmAssociated) {
+            const error = new Error('Requested Farm_id is not associated with this FDO.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // 2. Check that updateFarmId is assigned with is_new = 0 (registered)
+        const assignedFarm = fdoAssignedFarmId.find(farm => farm.farm_id === updateFarmId);
+        if (!assignedFarm || assignedFarm.is_new !== 0) {
+            const error = new Error('Farm is not registered');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Prepare update object with allowed fields
+        const allowedFields = [
+            'farm_id', 'origin', 'registration_id', 'pedometer_id', 'dam_type', 'dam_breed_type',
+            'sire_id', 'sire_type', 'sire_breed_type', 'animal_name', 'type_of_birth',
+            'species', 'breed', 'bcs', 'livestock_status', 'lactation_status', 'breeding_status',
+            'lactation_number', 'physiological_stage', 'parity_number'
+        ];
+
+        const filteredUpdateData = {};
+        allowedFields.forEach(field => {
+            if (updateData.hasOwnProperty(field)) {
+                filteredUpdateData[field] = updateData[field];
+            }
+        });
+
+        // Update the calf record
+        await FarmAnimal.update(filteredUpdateData, {
+            where: { id: calfId }
+        });
+
+        // Update is_animal status to 1 after successful update
+        await FarmAnimal.update(
+            { is_animal: 1 },
+            { where: { id: calfId } }
+        );
+
+        // Fetch and return updated record
+        const updatedCalf = await FarmAnimal.findOne({
+            where: { id: calfId }
+        });
+
+        return updatedCalf.toJSON();
+
+    } catch (error) {
+        console.error('Error in updateCalfById service:', error);
+        throw error;
+    }
+};
+
 module.exports = {
     registerAnimal,
     getAnimalsByFarmId,
-    getAnimalDetailsByAnimalId
+    getAnimalDetailsByAnimalId,
+    getCalfDetailsByCalfId,
+    updateCalfById
 };

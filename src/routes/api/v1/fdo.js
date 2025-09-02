@@ -5,7 +5,7 @@ const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 const FdoDataController = require('../../../controllers/fdo/fdoDataController');
 const farmDetailsController = require('../../../controllers/fdo/farmDetailsController');
-const animalRegistrationController = require('../../../controllers/fdo/animalRegistration/adultAnimalController');
+const farmAnimalsController = require('../../../controllers/fdo/farmAnimalsController');
 const stateDistrictController = require('../../../controllers/fdo/stateDistrictController');
 const animalRulesController = require('../../../controllers/fdo/animalRulesController');
 const animalBreedController = require('../../../controllers/fdo/animalBreedController');
@@ -20,17 +20,21 @@ router.post('/register-farm', authenticateFdoToken, farmDetailsController.regist
 router.get('/farm-details-by-farm-id/:farmId', authenticateFdoToken, farmDetailsController.getFarmDetailsByFarmId);
 
 // Animal routes
-router.post('/register-farm-animal', authenticateFdoToken, animalRegistrationController.registerFarmAnimal);
-router.get('/all-animals-by-farmId/:farm_id', authenticateFdoToken, animalRegistrationController.getAllFarmAnimalsByFarmId);
-router.get('/specific-animal-details-by-animalId/:animal_id', authenticateFdoToken, animalRegistrationController.getAnimalDetailsByAnimalId);
+router.post('/register-farm-animal', authenticateFdoToken, farmAnimalsController.registerFarmAnimal);
+router.get('/all-animals-by-farmId/:farm_id', authenticateFdoToken, farmAnimalsController.getAllFarmAnimalsByFarmId);
+router.get('/specific-animal-details-by-animalId/:animal_id', authenticateFdoToken, farmAnimalsController.getAnimalDetailsByAnimalId);
 
-// State and District routes
-router.get('/states', stateDistrictController.getAllStates);
-router.get('/districts/:stateId', stateDistrictController.getDistrictsByStateId);
+// Animal Calf routes
+router.get('/specific-calf-details-by-calfId/:calf_id', authenticateFdoToken, farmAnimalsController.getCalfDetailsByCalfId);
+router.put('/update-calf-details-by-calfId/:calf_id', authenticateFdoToken, farmAnimalsController.updateCalfDetails);
 
 // Animal Rules route
 router.post('/animal-rule/match', animalRulesController.matchAnimalRule);
 router.get('/get-animal-rules', animalRulesController.fetchAllRules);
+
+// State and District routes
+router.get('/states', stateDistrictController.getAllStates);
+router.get('/districts/:stateId', stateDistrictController.getDistrictsByStateId);
 
 // Animal Breeds route
 router.post('/get-animal-breeds', animalBreedController.fetchBreeds);

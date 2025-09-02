@@ -47,6 +47,7 @@ exports.authenticateFdoToken = async (req, res, next) => {
     // Add decoded token data to request object
     req.fdo = {
       fdoId: decoded.fdoId,
+      empId: fdoAccount.emp_id,
       fdoName: decoded.fdoName,
       phone: decoded.phone,
       username: decoded.username,

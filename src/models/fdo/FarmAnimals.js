@@ -98,7 +98,7 @@ const FarmAnimal = sequelize.define('FarmAnimal', {
     allowNull: true
   },
   lactation_number: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING(50),
     allowNull: true
   },
   physiological_stage: {
@@ -106,7 +106,7 @@ const FarmAnimal = sequelize.define('FarmAnimal', {
     allowNull: true
   },
   parity_number: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING(50),
     allowNull: true
   },
   born_status: {

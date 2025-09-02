@@ -104,6 +104,10 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: true
       },
+      previous_days_in_milk: {
+        type: Sequelize.INTEGER,
+        allowNull: true
+      },
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,

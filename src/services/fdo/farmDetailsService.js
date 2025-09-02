@@ -1,14 +1,28 @@
 const FarmDetails = require('../../models/fdo/FarmDetails');
 const FdoAccount = require('../../models/fdo/FdoAccounts');
 
-const createFarmDetails = async (farmData) => {
+const createFarmDetails = async (farmData, fdoAssignedFarmId, fdoEmpId) => {
   try {
+    if (
+      !farmData.farm_id ||
+      !Array.isArray(fdoAssignedFarmId) ||
+      !fdoAssignedFarmId.some(farm => farm.farm_id === farmData.farm_id)
+    ) {
+      const error = new Error('Farm is not assigned to this FDO');
+      throw error;
+    }
+
+    if (farmData.fdo_emp_id !== fdoEmpId) {
+      throw new Error('Employee Id is not associated with this FDO');
+    }
+ 
+    // Check for duplicate farm_id
     const existingFarm = await FarmDetails.findOne({
       where: { farm_id: farmData.farm_id }
     });
 
     if (existingFarm) {
-      throw new Error('Farm ID already exists');
+      throw new Error('Farm is already Registered');
     }
 
     // Validate required fields
@@ -110,21 +124,30 @@ const createFarmDetails = async (farmData) => {
     return farmDetails;
     
   } catch (error) {
-    throw new Error(`Error creating farm details: ${error.message}`);
+    throw new Error(`${error.message}`);
   }
 };
 
-const getFarmDetailsByFarmId = async (farmId) => {
+const getFarmDetailsByFarmId = async (farmId, fdoAssignedFarmId) => {
   try {
-    const farmDetails = await FarmDetails.findOne({
-      where: { farm_id: farmId }
-    });
+        if (
+          !farmId ||
+          !Array.isArray(fdoAssignedFarmId) ||
+          !fdoAssignedFarmId.some(farm => farm.farm_id === farmId)
+        ) {
+          const error = new Error('Farm is not assigned to this FDO');
+          throw error;
+        }
+    
+        const farmDetails = await FarmDetails.findOne({
+          where: { farm_id: farmId }
+        });
 
-    if (!farmDetails) {
-      throw new Error('Farm details not found for the given farm ID');
-    }
+        if (!farmDetails) {
+          throw new Error('Farm details not found for the given farm ID');
+        }
 
-    const farmData = farmDetails.toJSON();
+        const farmData = farmDetails.toJSON();
     
     const formatDateOfBirth = (dateString) => {
       const date = new Date(dateString);
@@ -197,7 +220,7 @@ const getFarmDetailsByFarmId = async (farmId) => {
     return formattedResponse;
     
   } catch (error) {
-    throw new Error(`Error fetching farm details: ${error.message}`);
+    throw new Error(`${error.message}`);
   }
 };
 

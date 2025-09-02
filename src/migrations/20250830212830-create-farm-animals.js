@@ -104,7 +104,7 @@ module.exports = {
         allowNull: true
       },
       lactation_number: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING(50),
         allowNull: true
       },
       physiological_stage: {
@@ -112,7 +112,7 @@ module.exports = {
         allowNull: true
       },
       parity_number: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING(50),
         allowNull: true
       },
       is_calf: {
