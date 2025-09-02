@@ -315,7 +315,7 @@ const getAnimalDetailsByAnimalId = async (animal_id, fdoAssignedFarmId) => {
             gender: calf.gender,
             dob: calf.dob,
             calveBornStatus: calf.born_status,
-            registration: calf.is_animal === 1 ? "done" : "pending"
+            registration: calf.is_animal === true ? "done" : "pending"
         }));
 
         const response = {
