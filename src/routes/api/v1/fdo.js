@@ -18,6 +18,7 @@ router.get('/all-fdo-data', FdoDataController.getAllFdoData);
 // Farm Details routes
 router.post('/register-farm', authenticateFdoToken, farmDetailsController.registerFarmDetails);
 router.get('/farm-details-by-farm-id/:farmId', authenticateFdoToken, farmDetailsController.getFarmDetailsByFarmId);
+router.get('/get-all-farm-animals-under-fdo', authenticateFdoToken, farmDetailsController.getAllFarmAnimalsUnderFdo);
 
 // Animal routes
 router.post('/register-farm-animal', authenticateFdoToken, farmAnimalsController.registerFarmAnimal);

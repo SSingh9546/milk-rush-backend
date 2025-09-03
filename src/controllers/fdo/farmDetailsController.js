@@ -64,7 +64,27 @@ const getFarmDetailsByFarmId = async (req, res) => {
   }
 };
 
+const getAllFarmAnimalsUnderFdo = async (req, res) => {
+    try {
+        const fdoAssignedFarmId = req.fdo.assignedFarmIds;
+
+        const animals = await farmDetailsService.getAllFarmAnimalsUnderFdo(fdoAssignedFarmId);
+        
+        res.status(200).json({
+            status: 'success',
+            message: 'Animals fetched successfully',
+            data: animals
+        });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+};
+
 module.exports = {
   registerFarmDetails,
-  getFarmDetailsByFarmId
+  getFarmDetailsByFarmId,
+  getAllFarmAnimalsUnderFdo
 };

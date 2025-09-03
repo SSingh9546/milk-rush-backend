@@ -1,5 +1,6 @@
 const FarmDetails = require('../../models/fdo/FarmDetails');
 const FdoAccount = require('../../models/fdo/FdoAccounts');
+const FarmAnimal = require('../../models/fdo/FarmAnimals');
 
 const createFarmDetails = async (farmData, fdoAssignedFarmId, fdoEmpId) => {
   try {
@@ -224,7 +225,71 @@ const getFarmDetailsByFarmId = async (farmId, fdoAssignedFarmId) => {
   }
 };
 
+// Get all farm animals under FDO's assigned farms
+const getAllFarmAnimalsUnderFdo = async (fdoAssignedFarmId) => {
+    try {
+        if (!Array.isArray(fdoAssignedFarmId) || fdoAssignedFarmId.length === 0) {
+            const error = new Error('No farms assigned to this FDO');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const registeredFarms = fdoAssignedFarmId.filter(farm => farm.is_new === 0);
+        
+        if (registeredFarms.length === 0) {
+            const error = new Error('All assigned farm id are not registered for this fdo');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const registeredFarmIds = registeredFarms.map(farm => farm.farm_id);
+
+        const animals = await FarmAnimal.findAll({
+            where: {
+                farm_id: registeredFarmIds,
+                is_animal: 1
+            },
+            include: [{
+                model: FarmDetails,
+                as: 'farm',
+                attributes: ['farm_name']
+            }],
+            attributes: [
+                'id',
+                'farm_id',
+                'registration_id',
+                'age',
+                'lactation_status',
+                'breeding_status',
+                'born_status'
+            ]
+        });
+
+        if (animals.length === 0) {
+            const error = new Error('No animal registered yet in this farm');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const formattedAnimals = animals.map(animal => ({
+            animal_id: animal.id,
+            farm_id: animal.farm_id,
+            registration_id: animal.registration_id,
+            age: animal.age,
+            farm_name: animal.farm?.farm_name || null,
+            lactation_status: animal.lactation_status,
+            breeding_status: animal.breeding_status,
+            life_status: animal.born_status
+        }));
+
+        return formattedAnimals;
+    } catch (error) {
+        throw error;
+    }
+};
+
 module.exports = {
   createFarmDetails,
-  getFarmDetailsByFarmId
+  getFarmDetailsByFarmId,
+  getAllFarmAnimalsUnderFdo
 };
