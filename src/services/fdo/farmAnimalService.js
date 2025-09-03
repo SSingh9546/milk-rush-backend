@@ -303,7 +303,7 @@ const getAnimalDetailsByAnimalId = async (animal_id, fdoAssignedFarmId) => {
         // Get calves info
         const calves = await FarmAnimal.findAll({
             where: { dam_id: animal_id },
-            attributes: ['id', 'registration_id', 'dam_id', 'gender', 'dob', 'born_status', 'is_animal']
+            attributes: ['id', 'registration_id', 'animal_name', 'dam_id', 'gender', 'dob', 'born_status', 'is_animal']
         });
 
         const bioDetails = animal.bioDetails && animal.bioDetails.length > 0 ? animal.bioDetails[0] : null;
@@ -312,6 +312,7 @@ const getAnimalDetailsByAnimalId = async (animal_id, fdoAssignedFarmId) => {
         const calvesBasicInfo = calves.map(calf => ({
             calfId: calf.id,
             registrationId: calf.registration_id,
+            calfName: calf.animal_name,
             damId: calf.dam_id,
             gender: calf.gender,
             dob: calf.dob,
