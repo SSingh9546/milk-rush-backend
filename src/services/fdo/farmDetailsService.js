@@ -282,7 +282,13 @@ const getAllFarmAnimalsUnderFdo = async (fdoAssignedFarmId) => {
             life_status: animal.born_status
         }));
 
-        return formattedAnimals;
+        const totalAssignedFarmIds = fdoAssignedFarmId.map(farm => farm.farm_id);
+        
+        return {
+            total_farm_id_assigned: totalAssignedFarmIds,
+            registered_farm_ids: registeredFarmIds,
+            animals: formattedAnimals
+        };
     } catch (error) {
         throw error;
     }
