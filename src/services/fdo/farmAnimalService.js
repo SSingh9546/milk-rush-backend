@@ -103,7 +103,7 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
       is_animal: 1
     }, { transaction });
 
-    // 2) BIO details (only if not a calf)
+    // BIO details (only if not a calf)
     const bioDetails = is_calf === 0 ? await AnimalBioDetail.create({
       farm_animal_id: mainAnimal.id,
       is_inseminated: animalData.is_inseminated,
@@ -132,9 +132,9 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
       days_in_milk: animalData.days_in_milk
     }, { transaction }) : null;
 
-    // 3) CALF rows (children) + capture real calf_ids
+    // 3) CALF rows
     const calves = [];
-    const calvesCreatedMeta = []; // { calf_id, gender, born_status }
+    const calvesCreatedMeta = [];
 
     if (calf_details?.length) {
       const calfAge = calculateAge(last_calving_date);
@@ -161,32 +161,28 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
       }
     }
 
-    // 4) Histories via flags
+    // Histories via flags
     let createdCalving = null;
     let heiferCalving = null;
 
-    // 4a) HEIFER BRED → create minimal calving row (mostly NULLs) and mark as current
-    if (is_calf === 0 && (is_heifer_bred === true || is_heifer_bred === 1)) {
+    // HEIFER BRED → create null calving row
+    if (is_calf === 0 && (is_heifer_bred === 1)) {
       heiferCalving = await CalvingHistory.create({
         animal_id: mainAnimal.id,
         farm_id: farm_id,
-        lactation_number: (animalData.lactation_number ?? 0),
+        lactation_number: 0,
         parity_number: 0,
-
-        // everything else NULL by design
         calving_date: null,
         calving_type: null,
-        total_calves: 0,              // model default, can omit
+        total_calves: 0,
         calves_gender_status: null,
         start_milk_date: null,
-
-        // mark as current so AI/PD can link to it
         is_current: true
       }, { transaction });
     }
 
-    // 4b) CALVING HISTORY (normal) — create if flagged, start_milk_date = calving_date, is_current = true
-    if (is_calf === 0 && (is_calving_new_cycle_date === true || is_calving_new_cycle_date === 1)) {
+    // CALVING HISTORY
+    if (is_calf === 0 && (is_calving_new_cycle_date === 1)) {
       createdCalving = await CalvingHistory.create({
         animal_id: mainAnimal.id,
         farm_id: farm_id,
@@ -194,75 +190,65 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
         parity_number: animalData.parity_number ?? null,
         calving_date: animalData.last_calving_date,
         calving_type: animalData.calving_type ?? null,
-
         total_calves: calvesCreatedMeta.length,
         calves_gender_status: calvesCreatedMeta.length ? calvesCreatedMeta : null,
-
         start_milk_date: animalData.last_calving_date,
         is_current: true
       }, { transaction });
-
-      // NOTE: As requested, we DO NOT "close" previous cycles anymore.
     }
 
-    // helper: always link AI/PD to the "current" calving
-    const resolveCalvingId = async () => {
-      // prefer rows created in this request
-      if (createdCalving) return createdCalving.id;
-      if (heiferCalving) return heiferCalving.id;
-
-      // otherwise, find a row marked current (latest)
-      const currentRow = await CalvingHistory.findOne({
-        where: { animal_id: mainAnimal.id, is_current: true },
-        order: [['createdAt', 'DESC']],
-        transaction
-      });
-      if (currentRow) return currentRow.id;
-
-      // fallback: latest by calving_date (nulls last), then by createdAt
-      const latestByDate = await CalvingHistory.findOne({
-        where: { animal_id: mainAnimal.id },
-        order: [
-          ['calving_date', 'DESC'],   // nulls will be last in most DBs
-          ['createdAt', 'DESC']
-        ],
-        transaction
-      });
-      return latestByDate ? latestByDate.id : null;
+    // Always link to the "current" calving only
+    const getCurrentCalvingOrThrow = async () => {
+        const current = await CalvingHistory.findOne({
+            where: { animal_id: mainAnimal.id, is_current: true },
+            order: [['createdAt', 'DESC']],
+            transaction
+        });
+        if (!current) {
+            const e = new Error('if calving new cycle date is false then it must be heifer true');
+            e.statusCode = 400;
+            throw e;
+        }
+        return current;
     };
 
-    // 4c) INSEMINATION HISTORY — create only when flagged, always for "current" calving
-    if (is_calf === 0 && (is_insemination_new_cycle_date === true || is_insemination_new_cycle_date === 1)) {
-      const calvingId = await resolveCalvingId();
-      if (calvingId) {
+
+    // INSEMINATION HISTORY
+    if (is_calf === 0 && (is_insemination_new_cycle_date === 1)) {
+        const current = await getCurrentCalvingOrThrow();               
+        if (!animalData.insemination_date) {
+            const e = new Error('insemination_date is required');
+            e.statusCode = 400; throw e;
+        }
         await InseminationHistory.create({
-          calving_id: calvingId,
-          insemination_date: animalData.insemination_date,
-          insemination_time: animalData.insemination_time ?? null,
-          insemination_type: animalData.insemination_type ?? null,
-          done_by: animalData.insemination_done_by ?? null,
-          insemination_count: animalData.insemination_count ?? 1
+            calving_id: current.id,                                       
+            insemination_date: animalData.insemination_date,
+            insemination_time: animalData.insemination_time ?? null,
+            insemination_type: animalData.insemination_type ?? null,
+            done_by: animalData.insemination_done_by ?? null,
+            insemination_count: animalData.insemination_count ?? 1
         }, { transaction });
-      }
     }
 
-    // 4d) PREGNANCY HISTORY — create only when flagged, always for "current" calving
-    if (is_calf === 0 && (is_pregnancy_date_changed === true || is_pregnancy_date_changed === 1)) {
-      const calvingId = await resolveCalvingId();
-      if (calvingId) {
+    // PREGNANCY HISTORY
+    if (is_calf === 0 && (is_pregnancy_date_changed === 1)) {
+        const current = await getCurrentCalvingOrThrow();               
+        if (!animalData.pd_check_date) {
+            const e = new Error('pd_check_date is required');
+            e.statusCode = 400; throw e;
+        }
         await PregnancyHistory.create({
-          calving_id: calvingId,
-          pd_check_date: animalData.pd_check_date,
-          pd_check_time: animalData.pd_check_time ?? null,
-          pregnancy_result: animalData.pregnancy_result ?? null,
-          done_by: animalData.pregnancy_done_by ?? null,
-          insemination_outcome: animalData.previous_insemination_outcome ?? null,
-          // (dry-off fields were removed from CalvingHistory; PregnancyHistory keeps its own fields)
-          dry_off_date: animalData.date_of_dry ?? null,
-          estimated_dry_off_date: animalData.estimated_dry_off_date ?? null
+            calving_id: current.id,                                       
+            pd_check_date: animalData.pd_check_date,
+            pd_check_time: animalData.pd_check_time ?? null,
+            pregnancy_result: animalData.pregnancy_result ?? null,
+            done_by: animalData.pregnancy_done_by ?? null,
+            insemination_outcome: animalData.previous_insemination_outcome ?? null,
+            dry_off_date: animalData.date_of_dry ?? null,
+            estimated_dry_off_date: animalData.estimated_dry_off_date ?? null
         }, { transaction });
-      }
     }
+
 
     await transaction.commit();
 

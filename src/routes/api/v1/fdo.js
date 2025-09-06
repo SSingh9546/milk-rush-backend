@@ -32,7 +32,8 @@ router.get('/specific-calf-details-by-calfId/:calf_id', authenticateFdoToken, fa
 router.put('/update-calf-details-by-calfId/:calf_id', authenticateFdoToken, farmAnimalsController.updateCalfDetails);
 
 // Update Farm Animal route
-router.put('/update-animal-profile/:animal_id', authenticateFdoToken, farmAnimalUpdateController.updateAnimalProfile);
+router.put('/update-animal-profile-info/:animal_id', authenticateFdoToken, farmAnimalUpdateController.updateAnimalProfileInfo);
+router.put('/update-animal-reproductive-info/:animal_id', authenticateFdoToken, farmAnimalUpdateController.updateAnimalReproductiveInfo);
 
 // Animal Rules route
 router.post('/animal-rule/match', animalRulesController.matchAnimalRule);
