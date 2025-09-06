@@ -2,226 +2,289 @@ const FarmDetail = require('../../models/fdo/FarmDetails');
 const FarmAnimal = require('../../models/fdo/FarmAnimals');
 const AnimalBioDetail = require('../../models/fdo/AnimalBioDetails');
 const AnimalRule = require('../../models/fdo/AnimalRules');
+const CalvingHistory = require('../../models/fdo/CalvingHistory');
+const InseminationHistory = require('../../models/fdo/InseminationHistory');
+const PregnancyHistory = require('../../models/fdo/PregnancyHistory');
 const { sequelize } = require('../../shared/config/sequelize-db');
 
 const calculateAge = (dob) => {
-    if (!dob) return null;
-    const birthDate = new Date(dob);
-    const today = new Date();
-    const diffTime = Math.abs(today - birthDate);
-    const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
-    return diffMonths;
+  if (!dob) return null;
+  const birthDate = new Date(dob);
+  const today = new Date();
+  const diffTime = Math.abs(today - birthDate);
+  const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30.44));
+  return diffMonths;
 };
 
 const registerAnimal = async (animalData, fdoAssignedFarmId) => {
-    const transaction = await sequelize.transaction();
-    
-    try {
-        const { 
-            // Farm animals table fields
-            farm_id,
-            dam_id,
-            registration_id,
-            origin,
-            pedometer_id,
-            dam_type,
-            dam_breed_type,
-            sire_id,
-            sire_type,
-            sire_breed_type,
-            animal_name,
-            type_of_birth,
-            gender,
-            dob,
-            species,
-            breed,
-            bcs,
-            livestock_status,
-            lactation_status,
-            breeding_status,
-            lactation_number,
-            physiological_stage,
-            parity_number,
-            born_status,
-            
-            // Animal bio details fields
-            is_inseminated,
-            is_pregnant,
-            calving_number,
-            insemination_date,
-            insemination_time,
-            insemination_count,
-            sire_details,
-            pd_check_date,
-            pd_check_time,
-            pregnancy_result,
-            done_by,
-            previous_insemination_outcome,
-            estimated_calving_date,
-            estimated_dry_off_date,
-            is_animal_dry,
-            date_of_dry,
-            pregnancy_check_notes,
-            last_calving_date,
-            calving_type,
-            is_placenta_retained,
-            total_calves_in_latest_calving,
-            days_in_milk,
-            
-            // Calf details
-            calf_details
-        } = animalData;
+  const transaction = await sequelize.transaction();
 
-        // 1. Check that farm_id is assigned to the FDO
-        if (
-            !fdoAssignedFarmId ||
-            !Array.isArray(fdoAssignedFarmId) ||
-            !fdoAssignedFarmId.some(farm => farm.farm_id === farm_id)
-        ) {
-            throw new Error('Farm is not assigned to this FDO');
-        }
+  try {
+    const requiredFields = [
+      'farm_id', 'origin', 'animal_name', 'gender', 'dob', 'species', 'breed',
+      'livestock_status', 'lactation_status', 'breeding_status', 'lactation_number',
+      'physiological_stage', 'parity_number', 'born_status', 'dam_id', 'registration_id',
+      'pedometer_id', 'dam_type', 'dam_breed_type', 'sire_id', 'sire_type', 'sire_breed_type',
+      'type_of_birth', 'bcs', 'is_inseminated', 'is_pregnant', 'calving_number',
+      'insemination_date', 'insemination_time', 'insemination_type', 'insemination_done_by',
+      'insemination_count', 'sire_details', 'pd_check_date', 'pd_check_time', 'pregnancy_result',
+      'pregnancy_done_by', 'previous_insemination_outcome', 'estimated_calving_date',
+      'estimated_dry_off_date', 'is_animal_dry', 'date_of_dry', 'pregnancy_check_notes',
+      'last_calving_date', 'calving_type', 'is_placenta_retained', 'total_calves_in_latest_calving',
+      'days_in_milk', 'calf_details'
+    ];
 
-        // 2. Check that farm_id is assigned with is_new = 0 (registered)
-        const assignedFarm = fdoAssignedFarmId.find(farm => farm.farm_id === farm_id);
-        if (!assignedFarm || assignedFarm.is_new !== 0) {
-            throw new Error('Farm is not registered');
-        }
-
-        // 3. Check if registration_id already exists
-        if (registration_id) {
-            const existingAnimal = await FarmAnimal.findOne({
-                where: { registration_id: registration_id }
-            });
-
-            if (existingAnimal) {
-                throw new Error('Animal is already registered');
-            }
-        }
-
-        // Calculate age and set is_calf
-        const age = calculateAge(dob);
-        const is_calf = age !== null && age <= 6 ? 1 : 0;
-        
-        // Step 1: Create main farm animal record
-        const mainAnimal = await FarmAnimal.create({
-            farm_id,
-            registration_id,
-            dam_id,
-            origin,
-            pedometer_id,
-            dam_type,
-            dam_breed_type,
-            sire_id,
-            sire_type,
-            sire_breed_type,
-            animal_name,
-            type_of_birth,
-            gender,
-            dob,
-            age: age,
-            species,
-            breed,
-            bcs,
-            livestock_status,
-            lactation_status,
-            breeding_status,
-            lactation_number,
-            physiological_stage,
-            parity_number,
-            born_status,
-            is_calf: is_calf,
-            is_animal: 1
-        }, { transaction });
-
-        let bioDetails = null;
-        
-        // Step 2: Create bio details if not a calf
-        if (is_calf === 0) {
-            const bioDetailsData = {
-                farm_animal_id: mainAnimal.id,
-                is_inseminated: is_inseminated || false,
-                is_pregnant: is_pregnant || false,
-                calving_number: calving_number || 0,
-                insemination_date: insemination_date || null,
-                insemination_time: insemination_time || null,
-                insemination_count: insemination_count || 0,
-                sire_details: sire_details || null,
-                pd_check_date: pd_check_date || null,
-                pd_check_time: pd_check_time || null,
-                pregnancy_result: pregnancy_result || '',
-                done_by: done_by || '',
-                previous_insemination_outcome: previous_insemination_outcome || null,
-                estimated_calving_date: estimated_calving_date || null,
-                estimated_dry_off_date: estimated_dry_off_date || null,
-                is_animal_dry: is_animal_dry || false,
-                date_of_dry: date_of_dry || null,
-                pregnancy_check_notes: pregnancy_check_notes || '',
-                last_calving_date: last_calving_date || null,
-                calving_type: calving_type || '',
-                is_placenta_retained: is_placenta_retained || false,
-                total_calves_in_latest_calving: total_calves_in_latest_calving || 0,
-                days_in_milk: days_in_milk || null
-            };
-            
-            bioDetails = await AnimalBioDetail.create(bioDetailsData, { transaction });
-        }
-
-        let calves = [];
-        const calfAge = calculateAge(last_calving_date);
-        const is_animal_calf = calfAge !== null && calfAge <= 6 ? 1 : 0;
-        // Step 3: Create calf records if calf_details provided
-        if (calf_details && Array.isArray(calf_details) && calf_details.length > 0) {
-            for (const calfDetail of calf_details) {
-                const { count, gender, born_status } = calfDetail;
-                
-                if (count && count > 0) {
-                    for (let i = 0; i < count; i++) {
-                        const calfRecord = await FarmAnimal.create({
-                            farm_id: farm_id,
-                            dam_id: mainAnimal.id,
-                            gender: gender,
-                            dob:last_calving_date,
-                            age: calfAge,
-                            born_status: born_status,
-                            is_calf: is_animal_calf,
-                            is_animal: 0
-                        }, { transaction });
-                        
-                        calves.push(calfRecord);
-                    }
-                }
-            }
-        }
-
-        await transaction.commit();
-
-        return {
-            mainAnimal,
-            bioDetails,
-            calves: calves.length > 0 ? calves : null
-        };
-
-    } catch (error) {
-        await transaction.rollback();
-        throw error;
+    const missingFields = requiredFields.filter(field => animalData[field] === undefined);
+    if (missingFields.length > 0) {
+      const error = new Error(`Missing required fields: ${missingFields.join(', ')}`);
+      error.statusCode = 404;
+      throw error;
     }
+
+    const {
+      farm_id,
+      registration_id,
+      last_calving_date,
+      calf_details,
+
+      // flags
+      is_calving_new_cycle_date,
+      is_insemination_new_cycle_date,
+      is_pregnancy_date_changed,
+      is_heifer_bred
+    } = animalData;
+
+    // Validate farm assignment
+    const assignedFarm = fdoAssignedFarmId?.find(farm => farm.farm_id === farm_id);
+    if (!assignedFarm || assignedFarm.is_new !== 0) {
+      const error = new Error(!assignedFarm ? 'Farm is not assigned to this FDO' : 'Farm is not registered');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Duplicate registration check
+    if (registration_id && await FarmAnimal.findOne({ where: { registration_id } })) {
+      const error = new Error('Animal is already registered');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const age = calculateAge(animalData.dob);
+    const is_calf = age !== null && age <= 6 ? 1 : 0;
+
+    // 1) MAIN animal
+    const mainAnimal = await FarmAnimal.create({
+      farm_id: animalData.farm_id,
+      registration_id: animalData.registration_id,
+      dam_id: animalData.dam_id,
+      origin: animalData.origin,
+      pedometer_id: animalData.pedometer_id,
+      dam_type: animalData.dam_type,
+      dam_breed_type: animalData.dam_breed_type,
+      sire_id: animalData.sire_id,
+      sire_type: animalData.sire_type,
+      sire_breed_type: animalData.sire_breed_type,
+      animal_name: animalData.animal_name,
+      type_of_birth: animalData.type_of_birth,
+      gender: animalData.gender,
+      dob: animalData.dob,
+      age,
+      species: animalData.species,
+      breed: animalData.breed,
+      bcs: animalData.bcs,
+      livestock_status: animalData.livestock_status,
+      lactation_status: animalData.lactation_status,
+      breeding_status: animalData.breeding_status,
+      lactation_number: animalData.lactation_number,
+      physiological_stage: animalData.physiological_stage,
+      parity_number: animalData.parity_number,
+      born_status: animalData.born_status,
+      is_calf,
+      is_animal: 1
+    }, { transaction });
+
+    // 2) BIO details (only if not a calf)
+    const bioDetails = is_calf === 0 ? await AnimalBioDetail.create({
+      farm_animal_id: mainAnimal.id,
+      is_inseminated: animalData.is_inseminated,
+      is_pregnant: animalData.is_pregnant,
+      calving_number: animalData.calving_number || 0,
+      insemination_date: animalData.insemination_date,
+      insemination_time: animalData.insemination_time,
+      insemination_type: animalData.insemination_type,
+      insemination_done_by: animalData.insemination_done_by,
+      insemination_count: animalData.insemination_count || 0,
+      sire_details: animalData.sire_details,
+      pd_check_date: animalData.pd_check_date,
+      pd_check_time: animalData.pd_check_time,
+      pregnancy_result: animalData.pregnancy_result,
+      pregnancy_done_by: animalData.pregnancy_done_by,
+      previous_insemination_outcome: animalData.previous_insemination_outcome,
+      estimated_calving_date: animalData.estimated_calving_date,
+      estimated_dry_off_date: animalData.estimated_dry_off_date,
+      is_animal_dry: animalData.is_animal_dry,
+      date_of_dry: animalData.date_of_dry,
+      pregnancy_check_notes: animalData.pregnancy_check_notes,
+      last_calving_date: animalData.last_calving_date,
+      calving_type: animalData.calving_type,
+      is_placenta_retained: animalData.is_placenta_retained,
+      total_calves_in_latest_calving: animalData.total_calves_in_latest_calving || 0,
+      days_in_milk: animalData.days_in_milk
+    }, { transaction }) : null;
+
+    // 3) CALF rows (children) + capture real calf_ids
+    const calves = [];
+    const calvesCreatedMeta = []; // { calf_id, gender, born_status }
+
+    if (calf_details?.length) {
+      const calfAge = calculateAge(last_calving_date);
+      const is_animal_calf = calfAge !== null && calfAge <= 6 ? 1 : 0;
+
+      for (const { count, gender, born_status } of calf_details) {
+        if (count > 0) {
+          for (let i = 0; i < count; i++) {
+            const calfRow = await FarmAnimal.create({
+              farm_id,
+              dam_id: mainAnimal.id,
+              gender,
+              dob: last_calving_date,
+              age: calfAge,
+              born_status,
+              is_calf: is_animal_calf,
+              is_animal: 0
+            }, { transaction });
+
+            calves.push(calfRow);
+            calvesCreatedMeta.push({ calf_id: calfRow.id, gender, born_status });
+          }
+        }
+      }
+    }
+
+    // 4) Histories via flags
+    let createdCalving = null;
+    let heiferCalving = null;
+
+    // 4a) HEIFER BRED → create minimal calving row (mostly NULLs) and mark as current
+    if (is_calf === 0 && (is_heifer_bred === true || is_heifer_bred === 1)) {
+      heiferCalving = await CalvingHistory.create({
+        animal_id: mainAnimal.id,
+        farm_id: farm_id,
+        lactation_number: (animalData.lactation_number ?? 0),
+        parity_number: 0,
+
+        // everything else NULL by design
+        calving_date: null,
+        calving_type: null,
+        total_calves: 0,              // model default, can omit
+        calves_gender_status: null,
+        start_milk_date: null,
+
+        // mark as current so AI/PD can link to it
+        is_current: true
+      }, { transaction });
+    }
+
+    // 4b) CALVING HISTORY (normal) — create if flagged, start_milk_date = calving_date, is_current = true
+    if (is_calf === 0 && (is_calving_new_cycle_date === true || is_calving_new_cycle_date === 1)) {
+      createdCalving = await CalvingHistory.create({
+        animal_id: mainAnimal.id,
+        farm_id: farm_id,
+        lactation_number: animalData.lactation_number ?? null,
+        parity_number: animalData.parity_number ?? null,
+        calving_date: animalData.last_calving_date,
+        calving_type: animalData.calving_type ?? null,
+
+        total_calves: calvesCreatedMeta.length,
+        calves_gender_status: calvesCreatedMeta.length ? calvesCreatedMeta : null,
+
+        start_milk_date: animalData.last_calving_date,
+        is_current: true
+      }, { transaction });
+
+      // NOTE: As requested, we DO NOT "close" previous cycles anymore.
+    }
+
+    // helper: always link AI/PD to the "current" calving
+    const resolveCalvingId = async () => {
+      // prefer rows created in this request
+      if (createdCalving) return createdCalving.id;
+      if (heiferCalving) return heiferCalving.id;
+
+      // otherwise, find a row marked current (latest)
+      const currentRow = await CalvingHistory.findOne({
+        where: { animal_id: mainAnimal.id, is_current: true },
+        order: [['createdAt', 'DESC']],
+        transaction
+      });
+      if (currentRow) return currentRow.id;
+
+      // fallback: latest by calving_date (nulls last), then by createdAt
+      const latestByDate = await CalvingHistory.findOne({
+        where: { animal_id: mainAnimal.id },
+        order: [
+          ['calving_date', 'DESC'],   // nulls will be last in most DBs
+          ['createdAt', 'DESC']
+        ],
+        transaction
+      });
+      return latestByDate ? latestByDate.id : null;
+    };
+
+    // 4c) INSEMINATION HISTORY — create only when flagged, always for "current" calving
+    if (is_calf === 0 && (is_insemination_new_cycle_date === true || is_insemination_new_cycle_date === 1)) {
+      const calvingId = await resolveCalvingId();
+      if (calvingId) {
+        await InseminationHistory.create({
+          calving_id: calvingId,
+          insemination_date: animalData.insemination_date,
+          insemination_time: animalData.insemination_time ?? null,
+          insemination_type: animalData.insemination_type ?? null,
+          done_by: animalData.insemination_done_by ?? null,
+          insemination_count: animalData.insemination_count ?? 1
+        }, { transaction });
+      }
+    }
+
+    // 4d) PREGNANCY HISTORY — create only when flagged, always for "current" calving
+    if (is_calf === 0 && (is_pregnancy_date_changed === true || is_pregnancy_date_changed === 1)) {
+      const calvingId = await resolveCalvingId();
+      if (calvingId) {
+        await PregnancyHistory.create({
+          calving_id: calvingId,
+          pd_check_date: animalData.pd_check_date,
+          pd_check_time: animalData.pd_check_time ?? null,
+          pregnancy_result: animalData.pregnancy_result ?? null,
+          done_by: animalData.pregnancy_done_by ?? null,
+          insemination_outcome: animalData.previous_insemination_outcome ?? null,
+          // (dry-off fields were removed from CalvingHistory; PregnancyHistory keeps its own fields)
+          dry_off_date: animalData.date_of_dry ?? null,
+          estimated_dry_off_date: animalData.estimated_dry_off_date ?? null
+        }, { transaction });
+      }
+    }
+
+    await transaction.commit();
+
+    return {
+      mainAnimal,
+      bioDetails,
+      calves: calves.length ? calves : null,
+      calvingHistory: createdCalving || heiferCalving || null
+    };
+
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 };
 
 const getAnimalsByFarmId = async (farm_id, fdoAssignedFarmId) => {
     try {
-        if (
-            !farm_id ||
-            !Array.isArray(fdoAssignedFarmId) ||
-            !fdoAssignedFarmId.some(farm => farm.farm_id === farm_id)
-        ) {
-            const error = new Error('Farm is not assigned to this FDO');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        const assignedFarm = fdoAssignedFarmId.find(farm => farm.farm_id === farm_id);
+        // Validate farm assignment
+        const assignedFarm = fdoAssignedFarmId?.find(farm => farm.farm_id === farm_id);
         if (!assignedFarm || assignedFarm.is_new !== 0) {
-            const error = new Error('Farm is not registered');
+            const error = new Error(!assignedFarm ? 'Farm is not assigned to this FDO' : 'Farm is not registered');
             error.statusCode = 400;
             throw error;
         }
@@ -303,7 +366,7 @@ const getAnimalDetailsByAnimalId = async (animal_id, fdoAssignedFarmId) => {
         // Get calves info
         const calves = await FarmAnimal.findAll({
             where: { dam_id: animal_id },
-            attributes: ['id', 'registration_id', 'animal_name', 'dam_id', 'gender', 'dob', 'born_status', 'is_animal']
+            attributes: ['id', 'registration_id', 'dam_id', 'animal_name', 'gender', 'dob', 'born_status', 'is_animal']
         });
 
         const bioDetails = animal.bioDetails && animal.bioDetails.length > 0 ? animal.bioDetails[0] : null;
@@ -312,8 +375,8 @@ const getAnimalDetailsByAnimalId = async (animal_id, fdoAssignedFarmId) => {
         const calvesBasicInfo = calves.map(calf => ({
             calfId: calf.id,
             registrationId: calf.registration_id,
-            calfName: calf.animal_name,
             damId: calf.dam_id,
+            calfName: calf.animal_name,
             gender: calf.gender,
             dob: calf.dob,
             calveBornStatus: calf.born_status,

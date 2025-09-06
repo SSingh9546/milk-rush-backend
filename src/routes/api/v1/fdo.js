@@ -3,9 +3,10 @@ const router = express.Router();
 const { authenticateFdoToken } = require('../../../middleware/validateFdoToken');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
-const FdoDataController = require('../../../controllers/fdo/fdoDataController');
-const farmDetailsController = require('../../../controllers/fdo/farmDetailsController');
+const FdoDataController = require('../../../controllers/fdo/fdoController');
+const farmDetailsController = require('../../../controllers/fdo/farmController');
 const farmAnimalsController = require('../../../controllers/fdo/farmAnimalsController');
+const farmAnimalUpdateController = require('../../../controllers/fdo/farmAnimalUpdateController');
 const stateDistrictController = require('../../../controllers/fdo/stateDistrictController');
 const animalRulesController = require('../../../controllers/fdo/animalRulesController');
 const animalBreedController = require('../../../controllers/fdo/animalBreedController');
@@ -15,12 +16,13 @@ router.post('/upload-fdo-data', upload.single('file'), FdoDataController.uploadF
 router.get('/specific-fdo-data', authenticateFdoToken, FdoDataController.getFdoData);
 router.get('/all-fdo-data', FdoDataController.getAllFdoData);
 
-// Farm Details routes
+// Farm routes
 router.post('/register-farm', authenticateFdoToken, farmDetailsController.registerFarmDetails);
 router.get('/farm-details-by-farm-id/:farmId', authenticateFdoToken, farmDetailsController.getFarmDetailsByFarmId);
 router.get('/get-all-farm-animals-under-fdo', authenticateFdoToken, farmDetailsController.getAllFarmAnimalsUnderFdo);
+router.put('/update-farm-info/:farm_id', authenticateFdoToken, farmDetailsController.updateFarmDetails);
 
-// Animal routes
+// Farm Animal routes
 router.post('/register-farm-animal', authenticateFdoToken, farmAnimalsController.registerFarmAnimal);
 router.get('/all-animals-by-farmId/:farm_id', authenticateFdoToken, farmAnimalsController.getAllFarmAnimalsByFarmId);
 router.get('/specific-animal-details-by-animalId/:animal_id', authenticateFdoToken, farmAnimalsController.getAnimalDetailsByAnimalId);
@@ -28,6 +30,9 @@ router.get('/specific-animal-details-by-animalId/:animal_id', authenticateFdoTok
 // Animal Calf routes
 router.get('/specific-calf-details-by-calfId/:calf_id', authenticateFdoToken, farmAnimalsController.getCalfDetailsByCalfId);
 router.put('/update-calf-details-by-calfId/:calf_id', authenticateFdoToken, farmAnimalsController.updateCalfDetails);
+
+// Update Farm Animal route
+router.put('/update-animal-profile/:animal_id', authenticateFdoToken, farmAnimalUpdateController.updateAnimalProfile);
 
 // Animal Rules route
 router.post('/animal-rule/match', animalRulesController.matchAnimalRule);

@@ -18,47 +18,51 @@ module.exports = {
       },
       is_inseminated: {
         type: Sequelize.BOOLEAN,
-        allowNull: false
-      },
-      is_pregnant: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false
-      },
-      calving_number: {
-        type: Sequelize.INTEGER,
-        allowNull: false
+        allowNull: true
       },
       insemination_date: {
         type: Sequelize.DATEONLY,
-        allowNull: false
+        allowNull: true
       },
       insemination_time: {
         type: Sequelize.TIME,
-        allowNull: false
+        allowNull: true
+      },
+      insemination_type: {
+        type: Sequelize.STRING(100),
+        allowNull: true
+      },
+      insemination_done_by: {
+        type: Sequelize.STRING(50),
+        allowNull: true
       },
       insemination_count: {
         type: Sequelize.INTEGER,
-        allowNull: false
+        allowNull: true
       },
       sire_details: {
         type: Sequelize.STRING(200),
         allowNull: true
       },
+      is_pregnant: {
+        type: Sequelize.BOOLEAN,
+        allowNull: true
+      },
       pd_check_date: {
         type: Sequelize.DATEONLY,
-        allowNull: false
+        allowNull: true
       },
       pd_check_time: {
         type: Sequelize.TIME,
-        allowNull: false
+        allowNull: true
       },
       pregnancy_result: {
         type: Sequelize.STRING(100),
-        allowNull: false
+        allowNull: true
       },
-      done_by: {
+      pregnancy_done_by: {
         type: Sequelize.STRING(120),
-        allowNull: false
+        allowNull: true
       },
       previous_insemination_outcome: {
         type: Sequelize.STRING(120),
@@ -74,31 +78,35 @@ module.exports = {
       },
       is_animal_dry: {
         type: Sequelize.BOOLEAN,
-        allowNull: false
+        allowNull: true
       },
       date_of_dry: {
         type: Sequelize.DATEONLY,
-        allowNull: false
+        allowNull: true
       },
       pregnancy_check_notes: {
         type: Sequelize.TEXT,
-        allowNull: false
+        allowNull: true
+      },
+      calving_number: {
+        type: Sequelize.INTEGER,
+        allowNull: true
       },
       last_calving_date: {
         type: Sequelize.DATEONLY,
-        allowNull: false
+        allowNull: true
       },
       calving_type: {
         type: Sequelize.STRING(100),
-        allowNull: false
+        allowNull: true
       },
       is_placenta_retained: {
         type: Sequelize.BOOLEAN,
-        allowNull: false
+        allowNull: true
       },
       total_calves_in_latest_calving: {
         type: Sequelize.INTEGER,
-        allowNull: false
+        allowNull: true
       },
       days_in_milk: {
         type: Sequelize.INTEGER,

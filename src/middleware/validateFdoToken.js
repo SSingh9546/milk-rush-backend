@@ -53,7 +53,6 @@ exports.authenticateFdoToken = async (req, res, next) => {
       username: decoded.username,
       assignedFarmIds: fdoAccount.assigned_farm_id
     };
-
     next();
 
   } catch (error) {

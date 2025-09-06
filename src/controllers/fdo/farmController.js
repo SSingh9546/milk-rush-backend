@@ -1,4 +1,4 @@
-const farmDetailsService = require('../../services/fdo/farmDetailsService');
+const farmDetailsService = require('../../services/fdo/farmService');
 
 const registerFarmDetails = async (req, res) => {
   try {
@@ -64,21 +64,47 @@ const getFarmDetailsByFarmId = async (req, res) => {
   }
 };
 
+const updateFarmDetails = async (req, res) => {
+    try {
+        const { farm_id } = req.params;
+        const { inseminator_contact_number, veterinarian_contact_number } = req.body;
+        const fdoAssignedFarmId = req.fdo.assignedFarmIds;
+
+        if (!farm_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Farm ID is required'
+            });
+        }
+
+        const result = await farmDetailsService.updateFarmDetails(farm_id, fdoAssignedFarmId, {
+            inseminator_contact_number,
+            veterinarian_contact_number
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Farm details updated successfully',
+            data: result
+        });
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+};
+
 const getAllFarmAnimalsUnderFdo = async (req, res) => {
     try {
         const fdoAssignedFarmId = req.fdo.assignedFarmIds;
 
-        const result = await farmDetailsService.getAllFarmAnimalsUnderFdo(fdoAssignedFarmId);
+        const animals = await farmDetailsService.getAllFarmAnimalsUnderFdo(fdoAssignedFarmId);
         
         res.status(200).json({
             status: 'success',
             message: 'Animals fetched successfully',
-            message: 'Animals fetched successfully',
-            fdo_farm_ids: {
-                total_farm_id_assigned: result.total_farm_id_assigned,
-                registered_farm_ids: result.registered_farm_ids
-            },
-            data: result.animals
+            data: animals
         });
     } catch (error) {
         res.status(error.statusCode || 500).json({
@@ -91,5 +117,6 @@ const getAllFarmAnimalsUnderFdo = async (req, res) => {
 module.exports = {
   registerFarmDetails,
   getFarmDetailsByFarmId,
+  updateFarmDetails,
   getAllFarmAnimalsUnderFdo
 };

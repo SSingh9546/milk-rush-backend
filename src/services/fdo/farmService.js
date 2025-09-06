@@ -225,6 +225,47 @@ const getFarmDetailsByFarmId = async (farmId, fdoAssignedFarmId) => {
   }
 };
 
+const updateFarmDetails = async (farm_id, fdoAssignedFarmId, updateData) => {
+    try {
+         if (
+            !farm_id ||
+            !Array.isArray(fdoAssignedFarmId) ||
+            !fdoAssignedFarmId.some(farm => farm.farm_id === farm_id)
+        ) {
+            const error = new Error('Given Farm Id is not assigned to this FDO');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const assignedFarm = fdoAssignedFarmId.find(farm => farm.farm_id === farm_id);
+        if (!assignedFarm || assignedFarm.is_new !== 0) {
+            const error = new Error('Farm is not registered');
+            error.statusCode = 400;
+            throw error;
+        }
+        
+        const farmRecord = await FarmDetails.findOne({ where: { farm_id } });
+
+        if (!farmRecord) {
+            throw new Error('Farm not found');
+        }
+
+        const updateFields = {};
+        if (updateData.inseminator_contact_number !== undefined) {
+            updateFields.inseminator_contact_number = updateData.inseminator_contact_number;
+        }
+        if (updateData.veterinarian_contact_number !== undefined) {
+            updateFields.veterinarian_contact_number = updateData.veterinarian_contact_number;
+        }
+
+        await FarmDetails.update(updateFields, { where: { farm_id } });
+
+        return await FarmDetails.findOne({ where: { farm_id } });
+    } catch (error) {
+        throw error;
+    }
+};
+
 // Get all farm animals under FDO's assigned farms
 const getAllFarmAnimalsUnderFdo = async (fdoAssignedFarmId) => {
     try {
@@ -282,13 +323,7 @@ const getAllFarmAnimalsUnderFdo = async (fdoAssignedFarmId) => {
             life_status: animal.born_status
         }));
 
-        const totalAssignedFarmIds = fdoAssignedFarmId.map(farm => farm.farm_id);
-        
-        return {
-            total_farm_id_assigned: totalAssignedFarmIds,
-            registered_farm_ids: registeredFarmIds,
-            animals: formattedAnimals
-        };
+        return formattedAnimals;
     } catch (error) {
         throw error;
     }
@@ -297,5 +332,6 @@ const getAllFarmAnimalsUnderFdo = async (fdoAssignedFarmId) => {
 module.exports = {
   createFarmDetails,
   getFarmDetailsByFarmId,
+  updateFarmDetails,
   getAllFarmAnimalsUnderFdo
 };

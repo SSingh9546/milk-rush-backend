@@ -12,9 +12,9 @@ const registerFarmAnimal = async (req, res) => {
         });
     } catch (error) {
         console.error('Animal registration error:', error);
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Failed to register animal'
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message
         });
     }
 };
@@ -40,10 +40,9 @@ const getAllFarmAnimalsByFarmId = async (req, res) => {
         });
     } catch (error) {
         console.error('Get animals error:', error);
-        const statusCode = error.statusCode || 500;
-        res.status(statusCode).json({
-            success: false,
-            message: error.message || 'Failed to fetch animals'
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message
         });
     }
 };
@@ -69,12 +68,9 @@ const getAnimalDetailsByAnimalId = async (req, res) => {
         });
     } catch (error) {
         console.error('Get animal details error:', error);
-        
-        const statusCode = error.statusCode || 500;
-        
-        res.status(statusCode).json({
-            success: false,
-            message: error.message || 'Failed to fetch animal details'
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message
         });
     }
 };
@@ -107,11 +103,9 @@ const getCalfDetailsByCalfId = async (req, res) => {
 
     } catch (error) {
         console.error('Error in getCalfDetails:', error);
-        const statusCode = error.statusCode || 500;
-        
-        res.status(statusCode).json({
-            success: false,
-            message: error.message || 'Failed to fetch calf details'
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message
         });
     }
 };
@@ -153,11 +147,9 @@ const updateCalfDetails = async (req, res) => {
 
     } catch (error) {
         console.error('Error in updateCalfDetails:', error);
-        const statusCode = error.statusCode || 500;
-        
-        res.status(statusCode).json({
-            success: false,
-            message: error.message || 'Failed to update calf details'
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message
         });
     }
 };

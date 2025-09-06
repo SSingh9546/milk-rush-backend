@@ -19,47 +19,51 @@ const AnimalBioDetail = sequelize.define('AnimalBioDetail', {
   },
   is_inseminated: {
     type: DataTypes.BOOLEAN,
-    allowNull: false
-  },
-  is_pregnant: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false
-  },
-  calving_number: {
-    type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   },
   insemination_date: {
     type: DataTypes.DATEONLY,
-    allowNull: false
+    allowNull: true
   },
   insemination_time: {
     type: DataTypes.TIME,
-    allowNull: false
+    allowNull: true
+  },
+  insemination_type: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  insemination_done_by: {
+    type: DataTypes.STRING(50),
+    allowNull: true
   },
   insemination_count: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   },
   sire_details: {
     type: DataTypes.STRING(200),
     allowNull: true
   },
+  is_pregnant: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true
+  },
   pd_check_date: {
     type: DataTypes.DATEONLY,
-    allowNull: false
+    allowNull: true
   },
   pd_check_time: {
     type: DataTypes.TIME,
-    allowNull: false
+    allowNull: true
   },
   pregnancy_result: {
     type: DataTypes.STRING(100),
-    allowNull: false
+    allowNull: true
   },
-  done_by: {
+  pregnancy_done_by: {
     type: DataTypes.STRING(120),
-    allowNull: false
+    allowNull: true
   },
   previous_insemination_outcome: {
     type: DataTypes.STRING(120),
@@ -75,31 +79,35 @@ const AnimalBioDetail = sequelize.define('AnimalBioDetail', {
   },
   is_animal_dry: {
     type: DataTypes.BOOLEAN,
-    allowNull: false
+    allowNull: true
   },
   date_of_dry: {
     type: DataTypes.DATEONLY,
-    allowNull: false
+    allowNull: true
   },
   pregnancy_check_notes: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: true
+  },
+  calving_number: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   },
   last_calving_date: {
     type: DataTypes.DATEONLY,
-    allowNull: false
+    allowNull: true
   },
   calving_type: {
     type: DataTypes.STRING(100),
-    allowNull: false
+    allowNull: true
   },
   is_placenta_retained: {
     type: DataTypes.BOOLEAN,
-    allowNull: false
+    allowNull: true
   },
   total_calves_in_latest_calving: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
   },
   days_in_milk: {
     type: DataTypes.INTEGER,

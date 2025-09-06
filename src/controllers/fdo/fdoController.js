@@ -1,4 +1,4 @@
-const fdoData = require('../../services/fdo/fdoDataService');
+const fdoData = require('../../services/fdo/fdoService');
 
 exports.uploadFdoCsv = async (req, res) => {
   if (!req.file?.buffer) return res.status(400).json({ error: 'CSV file required (field: file)' });
