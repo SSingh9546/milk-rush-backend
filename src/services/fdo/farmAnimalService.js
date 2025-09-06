@@ -419,8 +419,8 @@ const getAnimalDetailsByAnimalId = async (animal_id, fdoAssignedFarmId) => {
             "Insemination Info": {
                 inseminationDate: bioDetails ? bioDetails.insemination_date : null,
                 inseminationTime: bioDetails ? bioDetails.insemination_time : null,
-                inseminationType: animal.sire_type,
-                doneBy: bioDetails ? bioDetails.done_by : null,
+                inseminationType: bioDetails ? bioDetails.insemination_type : null,
+                inseminationDoneBy: bioDetails ? bioDetails.insemination_done_by : null,
                 inseminationCount: bioDetails ? bioDetails.insemination_count : null,
                 sireDetails: bioDetails ? bioDetails.sire_details : null
             },
@@ -428,7 +428,7 @@ const getAnimalDetailsByAnimalId = async (animal_id, fdoAssignedFarmId) => {
                 pdCheckDate: bioDetails ? bioDetails.pd_check_date : null,
                 pdCheckTime: bioDetails ? bioDetails.pd_check_time : null,
                 pregnancyResult: bioDetails ? bioDetails.pregnancy_result : null,
-                doneBy: bioDetails ? bioDetails.done_by : null,
+                pregnancyDoneBy: bioDetails ? bioDetails.pregnancy_done_by : null,
                 prevInseminationOutcome: bioDetails ? bioDetails.previous_insemination_outcome : null,
                 estimatedCalvingDate: bioDetails ? bioDetails.estimated_calving_date : null,
                 isAnimalDry: bioDetails ? bioDetails.is_animal_dry : null,
