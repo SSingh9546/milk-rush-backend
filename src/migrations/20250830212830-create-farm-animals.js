@@ -119,6 +119,10 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         allowNull: true
       },
+      is_adult: {
+        type: Sequelize.BOOLEAN,
+        allowNull: true
+      },      
       is_animal: {
         type: Sequelize.BOOLEAN,
         allowNull: true

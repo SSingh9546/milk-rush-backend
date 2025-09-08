@@ -71,6 +71,7 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
 
     const age = calculateAge(animalData.dob);
     const is_calf = age !== null && age <= 6 ? 1 : 0;
+    const is_adult = age !== null && age > 6  ? 1 : 0;
 
     // 1) MAIN animal
     const mainAnimal = await FarmAnimal.create({
@@ -100,6 +101,7 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
       parity_number: animalData.parity_number,
       born_status: animalData.born_status,
       is_calf,
+      is_adult,
       is_animal: 1
     }, { transaction });
 
@@ -139,6 +141,7 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
     if (calf_details?.length) {
       const calfAge = calculateAge(last_calving_date);
       const is_animal_calf = calfAge !== null && calfAge <= 6 ? 1 : 0;
+      const is_animal_adult = calfAge !== null && calfAge > 6 ? 1 : 0;
 
       for (const { count, gender, born_status } of calf_details) {
         if (count > 0) {
@@ -151,6 +154,7 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
               age: calfAge,
               born_status,
               is_calf: is_animal_calf,
+              is_adult: is_animal_adult,
               is_animal: 0
             }, { transaction });
 

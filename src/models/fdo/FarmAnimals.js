@@ -117,6 +117,10 @@ const FarmAnimal = sequelize.define('FarmAnimal', {
     type: DataTypes.BOOLEAN,
     allowNull: true
   },
+  is_adult: {
+    type: DataTypes.BOOLEAN,
+    allowNull: true
+  },
   is_animal: {
     type: DataTypes.BOOLEAN,
     allowNull: true

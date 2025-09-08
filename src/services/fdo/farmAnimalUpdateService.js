@@ -212,6 +212,14 @@ const farmAnimalUpdateService = {
 
             // HEIFER BRED → create null calving row
             if (is_heifer_bred === 1) {
+                await CalvingHistory.update(
+                    { is_current: false },
+                    { 
+                        where: { animal_id: animal_id, is_current: true },
+                        transaction 
+                    }
+                );
+
                 heiferCalving = await CalvingHistory.create({
                     animal_id: animal_id,
                     farm_id: farm_id,
@@ -233,6 +241,16 @@ const farmAnimalUpdateService = {
                     e.statusCode = 400;
                     throw e;
                 }
+                
+                // Mark all existing calving records false
+                await CalvingHistory.update(
+                    { is_current: false },
+                    { 
+                        where: { animal_id: animal_id, is_current: true },
+                        transaction 
+                    }
+                );
+
                 createdCalving = await CalvingHistory.create({
                     animal_id: animal_id,
                     farm_id: farm_id,

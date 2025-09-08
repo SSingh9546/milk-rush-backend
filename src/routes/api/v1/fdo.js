@@ -7,6 +7,7 @@ const FdoDataController = require('../../../controllers/fdo/fdoController');
 const farmDetailsController = require('../../../controllers/fdo/farmController');
 const farmAnimalsController = require('../../../controllers/fdo/farmAnimalsController');
 const farmAnimalUpdateController = require('../../../controllers/fdo/farmAnimalUpdateController');
+const lactationHistoryController = require('../../../controllers/fdo/lactationHistoryController');
 const stateDistrictController = require('../../../controllers/fdo/stateDistrictController');
 const animalRulesController = require('../../../controllers/fdo/animalRulesController');
 const animalBreedController = require('../../../controllers/fdo/animalBreedController');
@@ -21,6 +22,7 @@ router.post('/register-farm', authenticateFdoToken, farmDetailsController.regist
 router.get('/farm-details-by-farm-id/:farmId', authenticateFdoToken, farmDetailsController.getFarmDetailsByFarmId);
 router.get('/get-all-farm-animals-under-fdo', authenticateFdoToken, farmDetailsController.getAllFarmAnimalsUnderFdo);
 router.put('/update-farm-info/:farm_id', authenticateFdoToken, farmDetailsController.updateFarmDetails);
+router.get('/get-fdo-farms-dashboard-data', authenticateFdoToken, farmDetailsController.getFarmDashboardData);
 
 // Farm Animal routes
 router.post('/register-farm-animal', authenticateFdoToken, farmAnimalsController.registerFarmAnimal);
@@ -34,6 +36,9 @@ router.put('/update-calf-details-by-calfId/:calf_id', authenticateFdoToken, farm
 // Update Farm Animal route
 router.put('/update-animal-profile-info/:animal_id', authenticateFdoToken, farmAnimalUpdateController.updateAnimalProfileInfo);
 router.put('/update-animal-reproductive-info/:animal_id', authenticateFdoToken, farmAnimalUpdateController.updateAnimalReproductiveInfo);
+
+// Lactation History routes
+router.get('/get-all-lactation-history/:animal_id', authenticateFdoToken, lactationHistoryController.getLactationHistory);
 
 // Animal Rules route
 router.post('/animal-rule/match', animalRulesController.matchAnimalRule);

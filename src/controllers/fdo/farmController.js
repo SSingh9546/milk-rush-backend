@@ -1,4 +1,5 @@
 const farmDetailsService = require('../../services/fdo/farmService');
+const dashboardDataService = require('../../services/fdo/dashboardDataService');
 
 const registerFarmDetails = async (req, res) => {
   try {
@@ -98,7 +99,8 @@ const updateFarmDetails = async (req, res) => {
 const getAllFarmAnimalsUnderFdo = async (req, res) => {
     try {
         const fdoAssignedFarmId = req.fdo.assignedFarmIds;
-
+        console.log(fdoAssignedFarmId);
+        
         const animals = await farmDetailsService.getAllFarmAnimalsUnderFdo(fdoAssignedFarmId);
         
         res.status(200).json({
@@ -114,9 +116,29 @@ const getAllFarmAnimalsUnderFdo = async (req, res) => {
     }
 };
 
+const getFarmDashboardData = async (req, res) => {
+    try {
+       const fdoAssignedFarmId = req.fdo.assignedFarmIds;
+        
+        const dashboardData = await dashboardDataService.getFarmDashboardCounts(fdoAssignedFarmId);
+        
+        res.status(200).json({
+            success: true,
+            data: dashboardData
+        });
+    } catch (error) {
+        console.error('Dashboard controller error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
 module.exports = {
   registerFarmDetails,
   getFarmDetailsByFarmId,
   updateFarmDetails,
-  getAllFarmAnimalsUnderFdo
+  getAllFarmAnimalsUnderFdo,
+  getFarmDashboardData
 };
