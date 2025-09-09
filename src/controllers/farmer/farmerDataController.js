@@ -1,6 +1,7 @@
-const {importFarmersCSV, getFarmerData} = require('../../services/farmer/farmerDataService');
+const farmerService = require('../../services/farmer/farmerDataService');
+const farmerDashboardService = require('../../services/global/dashboardDataService');
 
-exports.uploadFarmers = async (req, res) => {
+const uploadFarmers = async (req, res) => {
   if (!req.file?.buffer) return res.status(400).json({ error: 'CSV file required (field: file)' });
   
   if (req.file.mimetype !== 'text/csv' && !req.file.originalname.endsWith('.csv')) {
@@ -8,7 +9,7 @@ exports.uploadFarmers = async (req, res) => {
   }
 
   try {
-    const result = await importFarmersCSV(req.file.buffer);
+    const result = await farmerService.importFarmersCSV(req.file.buffer);
     res.status(201).json({ 
       success: true, 
       message: 'Farmers data uploaded successfully',
@@ -24,9 +25,9 @@ exports.uploadFarmers = async (req, res) => {
 };
 
 // Get Login farmer profile data
-exports.fetchFarmerData = async (req, res) => {
+const fetchFarmerData = async (req, res) => {
   try {
-    const result = await getFarmerData(req.farmer.farmId);
+    const result = await farmerService.getFarmerData(req.farmer.farmId);
 
     return res.status(200).json({
       success: true,
@@ -40,4 +41,29 @@ exports.fetchFarmerData = async (req, res) => {
       message: error.message
     });
   }
+};
+
+const getFarmerDashboardData = async (req, res) => {
+    try {
+       const FarmId = req.farmer.farmId;
+        console.log(FarmId);
+        const dashboardData = await farmerDashboardService.getFarmerDashboardCounts(FarmId);
+        
+        res.status(200).json({
+            success: true,
+            data: dashboardData
+        });
+    } catch (error) {
+        console.error('Dashboard controller error:', error);
+        res.status(error.statusCode || 500).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+};
+
+module.exports = {
+    uploadFarmers,
+    fetchFarmerData,
+    getFarmerDashboardData
 };

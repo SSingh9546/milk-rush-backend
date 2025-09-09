@@ -50,6 +50,11 @@ const CalvingHistory = sequelize.define('CalvingHistory', {
     type: DataTypes.DATEONLY,
     allowNull: true
   },
+  previous_milk_days: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0
+  },
   is_current: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

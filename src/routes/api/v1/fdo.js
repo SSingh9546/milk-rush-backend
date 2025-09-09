@@ -39,6 +39,7 @@ router.put('/update-animal-reproductive-info/:animal_id', authenticateFdoToken, 
 
 // Lactation History routes
 router.get('/get-all-lactation-history/:animal_id', authenticateFdoToken, lactationHistoryController.getLactationHistory);
+router.get('/get-lactation-history-details/:calving_id', authenticateFdoToken, lactationHistoryController.getLactationHistoryDetails);
 
 // Animal Rules route
 router.post('/animal-rule/match', animalRulesController.matchAnimalRule);

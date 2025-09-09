@@ -52,6 +52,11 @@ module.exports = {
         type: Sequelize.DATEONLY,
         allowNull: true
       },
+      previous_milk_days: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
       is_current: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
@@ -68,9 +73,11 @@ module.exports = {
         defaultValue: Sequelize.NOW
       }
     });
+    await queryInterface.addIndex('calving_history', ['animal_id']);
   },
 
   down: async (queryInterface) => {
+    await queryInterface.addIndex('calving_history', ['animal_id']);
     await queryInterface.dropTable('calving_history');
   }
 };

@@ -1,5 +1,5 @@
 const farmDetailsService = require('../../services/fdo/farmService');
-const dashboardDataService = require('../../services/fdo/dashboardDataService');
+const dashboardDataService = require('../../services/global/dashboardDataService');
 
 const registerFarmDetails = async (req, res) => {
   try {

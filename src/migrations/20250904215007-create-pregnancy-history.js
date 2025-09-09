@@ -19,6 +19,16 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
+      insemination_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'insemination_history',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      },
       pd_check_date: {
         type: Sequelize.DATEONLY,
         allowNull: false
@@ -58,9 +68,14 @@ module.exports = {
         defaultValue: Sequelize.NOW
       }
     });
+
+    await queryInterface.addIndex('pregnancy_history', ['calving_id']);
+    await queryInterface.addIndex('pregnancy_history', ['insemination_id']);
   },
 
   down: async (queryInterface) => {
+    await queryInterface.removeIndex('pregnancy_history', ['calving_id']);
+    await queryInterface.removeIndex('pregnancy_history', ['insemination_id']);
     await queryInterface.dropTable('pregnancy_history');
   }
 };

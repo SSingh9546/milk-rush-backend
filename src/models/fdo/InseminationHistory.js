@@ -36,6 +36,11 @@ const InseminationHistory = sequelize.define('InseminationHistory', {
   insemination_count: {
     type: DataTypes.INTEGER,
     allowNull: false
+  },
+  is_current: {
+    type: DataTypes.BOOLEAN,    
+    allowNull: false,
+    defaultValue: true
   }
 }, {
   tableName: 'insemination_history',

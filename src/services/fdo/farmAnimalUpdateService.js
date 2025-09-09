@@ -189,6 +189,7 @@ const farmAnimalUpdateService = {
             if (is_calving_new_cycle_date === 1 && Array.isArray(calf_details) && calf_details.length && last_calving_date) {
                 const calfAge = calculateAge(last_calving_date);
                 const is_animal_calf = calfAge !== null && calfAge <= 6 ? 1 : 0;
+                const is_animal_adult = calfAge !== null && calfAge > 6 ? 1 : 0;
 
                 for (const { count, gender, born_status } of calf_details) {
                     if (count > 0) {
@@ -201,6 +202,7 @@ const farmAnimalUpdateService = {
                                 age: calfAge,
                                 born_status,
                                 is_calf: is_animal_calf,
+                                is_adult:is_animal_adult,
                                 is_animal: 0
                             }, { transaction });
                             calves.push(calfRow);
@@ -241,7 +243,42 @@ const farmAnimalUpdateService = {
                     e.statusCode = 400;
                     throw e;
                 }
-                
+
+                // Get previous calving record before marking current ones as false
+                const previousCalving = await CalvingHistory.findOne({
+                    where: { 
+                        animal_id: animal_id, 
+                        is_current: true 
+                    },
+                    order: [['createdAt', 'DESC']],
+                    transaction
+                });
+
+                // Calculate and update previous_milk_days in the previous lactation
+                if (previousCalving && previousCalving.lactation_number > 0 && previousCalving.calving_date) {
+                    const currentCalvingDate = new Date(updateData.last_calving_date);
+                    const previousCalvingDate = new Date(previousCalving.calving_date);
+                    
+                    // Calculate days difference
+                    const timeDifference = currentCalvingDate.getTime() - previousCalvingDate.getTime();
+                    const daysDifference = Math.floor(timeDifference / (1000 * 3600 * 24));
+                    let previousMilkDays = daysDifference - 60;
+                    
+                    // Ensure it's not negative
+                    if (previousMilkDays < 0) {
+                        previousMilkDays = 0;
+                    }
+
+                    // Update the previous calving record with calculated milk days
+                    await CalvingHistory.update(
+                        { previous_milk_days: previousMilkDays },
+                        { 
+                            where: { id: previousCalving.id },
+                            transaction 
+                        }
+                    );
+                }
+           
                 // Mark all existing calving records false
                 await CalvingHistory.update(
                     { is_current: false },
@@ -261,6 +298,7 @@ const farmAnimalUpdateService = {
                     total_calves: calvesCreatedMeta.length,
                     calves_gender_status: calvesCreatedMeta.length ? calvesCreatedMeta : null,
                     start_milk_date: updateData.last_calving_date,
+                    previous_milk_days: 0,
                     is_current: true
                 }, { transaction });
             }
@@ -283,18 +321,30 @@ const farmAnimalUpdateService = {
             // INSEMINATION HISTORY
             if (is_insemination_new_cycle_date === 1) {
                 const current = await getCurrentCalvingOrThrow();
+
                 if (!updateData.insemination_date) {
                     const e = new Error('insemination_date is required');
                     e.statusCode = 400;
                     throw e;
                 }
+
+                // Mark all existing insemination records false
+                await InseminationHistory.update(
+                    { is_current: false },
+                    { 
+                        where: { calving_id: current.id, is_current: true },
+                        transaction 
+                    }
+                );
+
                 createdInsemination = await InseminationHistory.create({
                     calving_id: current.id,
                     insemination_date: updateData.insemination_date,
                     insemination_time: updateData.insemination_time ?? null,
                     insemination_type: updateData.insemination_type ?? null,
                     done_by: updateData.insemination_done_by ?? null,
-                    insemination_count: updateData.insemination_count ?? 1
+                    insemination_count: updateData.insemination_count ?? 1,
+                    is_current: true
                 }, { transaction });
             }
 
@@ -306,8 +356,19 @@ const farmAnimalUpdateService = {
                     e.statusCode = 400;
                     throw e;
                 }
+
+                // Find the current insemination record for this calving
+                const currentInsemination = await InseminationHistory.findOne({
+                    where: { calving_id: current.id, is_current: true },
+                    order: [['createdAt', 'DESC']],
+                    transaction
+                });
+
+                const inseminationId = currentInsemination ? currentInsemination.id : null;
+
                 createdPregnancy = await PregnancyHistory.create({
                     calving_id: current.id,
+                    insemination_id: inseminationId,
                     pd_check_date: updateData.pd_check_date,
                     pd_check_time: updateData.pd_check_time ?? null,
                     pregnancy_result: updateData.pregnancy_result ?? null,

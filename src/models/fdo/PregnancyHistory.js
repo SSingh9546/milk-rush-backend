@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../shared/config/sequelize-db');
 const CalvingHistory = require('./CalvingHistory');
+const InseminationHistory = require('./InseminationHistory');
 
 const PregnancyHistory = sequelize.define('PregnancyHistory', {
   id: {
@@ -14,6 +15,14 @@ const PregnancyHistory = sequelize.define('PregnancyHistory', {
     allowNull: false,
     references: {
       model: 'calving_history',
+      key: 'id'
+    }
+  },
+  insemination_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'insemination_history',
       key: 'id'
     }
   },
@@ -47,7 +56,11 @@ const PregnancyHistory = sequelize.define('PregnancyHistory', {
   }
 }, {
   tableName: 'pregnancy_history',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    { fields: ['calving_id'] },
+    { fields: ['insemination_id'] }
+  ]
 });
 
 // Associations
@@ -59,6 +72,16 @@ CalvingHistory.hasMany(PregnancyHistory, {
 PregnancyHistory.belongsTo(CalvingHistory, {
   foreignKey: 'calving_id',
   as: 'calving'
+});
+
+InseminationHistory.hasMany(PregnancyHistory, {
+  foreignKey: 'insemination_id',
+  as: 'pregnancies'
+});
+
+PregnancyHistory.belongsTo(InseminationHistory, {
+  foreignKey: 'insemination_id',
+  as: 'insemination'
 });
 
 module.exports = PregnancyHistory;

@@ -39,6 +39,11 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false
       },
+      is_current: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
@@ -50,9 +55,11 @@ module.exports = {
         defaultValue: Sequelize.NOW
       }
     });
+    await queryInterface.addIndex('insemination_history', ['calving_id']);
   },
 
   down: async (queryInterface) => {
+    await queryInterface.removeIndex('insemination_history', ['calving_id']);
     await queryInterface.dropTable('insemination_history');
   }
 };
