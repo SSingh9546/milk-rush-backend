@@ -22,7 +22,10 @@ router.post('/register-farm', authenticateFdoToken, farmDetailsController.regist
 router.get('/farm-details-by-farm-id/:farmId', authenticateFdoToken, farmDetailsController.getFarmDetailsByFarmId);
 router.get('/get-all-farm-animals-under-fdo', authenticateFdoToken, farmDetailsController.getAllFarmAnimalsUnderFdo);
 router.put('/update-farm-info/:farm_id', authenticateFdoToken, farmDetailsController.updateFarmDetails);
-router.get('/get-fdo-farms-dashboard-data', authenticateFdoToken, farmDetailsController.getFarmDashboardData);
+
+//Fdo Farm Dashboard routes
+router.get('/get-fdo-farms-dashboard-data', authenticateFdoToken, farmDetailsController.getFdoAllFarmsDashboardData);
+router.get('/get-specific-farm-dashboard-data/:farmId', authenticateFdoToken, farmDetailsController.getSpecificFarmDashboardData);
 
 // Farm Animal routes
 router.post('/register-farm-animal', authenticateFdoToken, farmAnimalsController.registerFarmAnimal);
