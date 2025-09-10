@@ -11,4 +11,6 @@ router.get('/get-farmer-data', authenticateFarmerToken, farmerController.fetchFa
 
 router.get('/get-farmer-dashboard-data', authenticateFarmerToken, farmerController.getFarmerDashboardData);
 
+router.get('/get-farmer-farm-details', authenticateFarmerToken, farmerController.getFarmerFarmDetails);
+
 module.exports = router;

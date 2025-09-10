@@ -45,8 +45,7 @@ const fetchFarmerData = async (req, res) => {
 
 const getFarmerDashboardData = async (req, res) => {
     try {
-       const FarmId = req.farmer.farmId;
-        console.log(FarmId);
+        const FarmId = req.farmer.farmId;
         const dashboardData = await farmerDashboardService.getFarmerDashboardCounts(FarmId);
         
         res.status(200).json({
@@ -62,8 +61,28 @@ const getFarmerDashboardData = async (req, res) => {
     }
 };
 
+const getFarmerFarmDetails = async (req, res) => {
+  try {
+    const farmId = req.farmer.farmId; 
+
+    const farmDetails = await farmerService.getFarmerFarmDetails(farmId);
+
+    res.status(200).json({
+      success: true,
+      farmDetails
+    });
+  } catch (error) {
+    console.error('Get Farmer Farm Details error:', error);
+    res.status(error.statusCode || 500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
-    uploadFarmers,
-    fetchFarmerData,
-    getFarmerDashboardData
+  uploadFarmers,
+  fetchFarmerData,
+  getFarmerDashboardData,
+  getFarmerFarmDetails
 };

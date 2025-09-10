@@ -2,6 +2,7 @@ const { Op, fn, col, literal } = require('sequelize');
 const FarmDetails = require('../../models/fdo/FarmDetails');
 const FarmAnimal = require('../../models/fdo/FarmAnimals');
 const FdoAccount = require('../../models/fdo/FdoAccounts');
+const FarmerData = require('../../models/farmer/FarmerData');
 
 const getFarmDashboardCounts = async (fdoAssignedFarmId) => {
     try {
@@ -195,7 +196,14 @@ const getFarmerDashboardCounts = async (farmId) => {
 
         const animalResult = animalData[0] || {};
 
+        const farmerInfo = await FarmerData.findOne({
+            where: { farm_id: farmId },
+            attributes: ['farm_id', 'farm_name', 'farmer_name', 'phone'],
+            raw: true
+        });
+
         return {
+            farmerInfo,
             farmAnimalData: {
                 totalAnimals: parseInt(animalResult.totalAnimals) || 0,
                 adultAnimals: parseInt(animalResult.adultAnimals) || 0,

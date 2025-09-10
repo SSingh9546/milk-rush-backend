@@ -124,6 +124,10 @@ const getFarmDashboardData = async (req, res) => {
         
         res.status(200).json({
             success: true,
+            fdoInfo: {
+                fdoName: req.fdo.fdoName,
+                phone: req.fdo.phone,
+            },
             data: dashboardData
         });
     } catch (error) {

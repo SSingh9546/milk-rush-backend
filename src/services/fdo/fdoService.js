@@ -5,6 +5,7 @@ const { sequelize } = require('../../shared/config/sequelize-db');
 const FdoAccount = require('../../models/fdo/FdoAccounts');
 const FarmerData = require('../../models/farmer/FarmerData');
 const FarmDetails = require('../../models/fdo/FarmDetails');
+const FarmAnimal = require('../../models/fdo/FarmAnimals');
 
 const generateCredentials = (fdoName, phone, assignedFarmId) => {
   const firstWord = fdoName.split(' ')[0].toLowerCase();
@@ -145,7 +146,7 @@ exports.getSpecificFdoData = async (fdoId, is_new) => {
   
   const farmIds = filteredFarms.map(farm => farm.farm_id);
   
-  const [farmerData, farmDetails] = await Promise.all([
+  const [farmerData, farmDetails, animalCounts] = await Promise.all([
     FarmerData.findAll({
       where: { farm_id: { [Op.in]: farmIds } },
       attributes: ['farm_id', 'farm_name', 'phone', 'farmer_name']
@@ -153,7 +154,11 @@ exports.getSpecificFdoData = async (fdoId, is_new) => {
     FarmDetails.findAll({
       where: { farm_id: { [Op.in]: farmIds } },
       attributes: ['farm_id', 'address_line1', 'farm_status']
-    })
+    }),
+    Promise.all(farmIds.map(async (farm_id) => {
+      const count = await FarmAnimal.count({ where: { farm_id } });
+      return { farm_id, total_animals: count };
+    }))
   ]);
   
   const farmMap = {};
@@ -164,8 +169,14 @@ exports.getSpecificFdoData = async (fdoId, is_new) => {
         ...farmMap[farm.farm_id],
         farm_address: is_new == 0 ? farm.address_line1 : null,
         status: is_new == 0 ? farm.farm_status : null,
-        total_animals: null
       };
+    }
+  });
+
+  // Add total_animals to the farmMap
+  animalCounts.forEach(({ farm_id, total_animals }) => {
+    if (farmMap[farm_id]) {
+      farmMap[farm_id].total_animals = total_animals;
     }
   });
   

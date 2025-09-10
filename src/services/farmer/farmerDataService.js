@@ -1,8 +1,9 @@
 const csv = require('csv-parser');
 const { Readable } = require('stream');
 const FarmerData = require('../../models/farmer/FarmerData');
+const FarmDetails = require('../../models/fdo/FarmDetails');
 
-exports.importFarmersCSV = async (fileBuffer) => {
+const importFarmersCSV = async (fileBuffer) => {
   const rows = [];
   const requiredHeaders = ['farm_id', 'farm_name', 'farmer_name', 'phone'];
 
@@ -39,7 +40,7 @@ exports.importFarmersCSV = async (fileBuffer) => {
 };
 
 // Get Login farmer profile data
-exports.getFarmerData = async (farmId) => {
+const getFarmerData = async (farmId) => {
   try {
     const farmer = await FarmerData.findOne({
       where: { farm_id: farmId },
@@ -64,4 +65,32 @@ exports.getFarmerData = async (farmId) => {
   } catch (error) {
     throw new Error(error.message);
   }
+};
+
+const getFarmerFarmDetails = async (farmId) => {
+  try {
+    const farmDetails = await FarmDetails.findOne({
+      where: { farm_id: farmId },
+      attributes: {
+        exclude: ['createdAt', 'updatedAt', 'id']
+      },
+      raw: true
+    });
+
+    if (!farmDetails) {
+      const error = new Error('Farm details not found for the given farm_id');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return farmDetails;
+  } catch (error) {
+    throw error;
+  }
+};
+
+module.exports = {
+  importFarmersCSV,
+  getFarmerData,
+  getFarmerFarmDetails
 };
