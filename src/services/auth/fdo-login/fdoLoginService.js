@@ -20,11 +20,11 @@ exports.login = async (username, password) => {
       throw error;
     }
 
-    if (fdoAccount.is_login) {
-      const error = new Error('This account is already logged in on another device');
-      error.statusCode = 403;
-      throw error;
-    }
+    // if (fdoAccount.is_login) {
+    //   const error = new Error('This account is already logged in on another device');
+    //   error.statusCode = 403;
+    //   throw error;
+    // }
 
     await FdoAccount.update({
       is_login: true,
