@@ -1,45 +1,45 @@
-const FdoAccount = require('../../../models/fdo/FdoAccounts');
+const AdminLogin = require('../../../models/stake-holder/AdminLogin');
 const jwt = require('jsonwebtoken');
 
 // JWT Configuration
 const JWT_SECRET = process.env.JWT_SECRET || 'e3aab66d66df84c3d885a1bce2f3923df5f3121375a4632397f4d6bc068f48b6';
-const JWT_EXPIRY = process.env.FDO_JWT_EXPIRY || '1d';
+const JWT_EXPIRY = process.env.JWT_EXPIRY || '60d';
 
 exports.login = async (username, password) => {
   try {
-    const fdoAccount = await FdoAccount.findOne({
+    const adminLogin = await AdminLogin.findOne({
       where: {
         username: username,
         password: password
       }
     });
 
-    if (!fdoAccount) {
+    if (!adminLogin) {
       const error = new Error('Invalid username or password');
       error.statusCode = 400;
       throw error;
     }
 
-    if (fdoAccount.is_login) {
+    if (adminLogin.is_login) {
       const error = new Error('This account is already logged in on another device');
       error.statusCode = 403;
       throw error;
     }
 
-    await FdoAccount.update({
+    await AdminLogin.update({
       is_login: true,
       last_login: new Date()
     }, {
-      where: { id: fdoAccount.id }
+      where: { id: adminLogin.id }
     });
 
+    // Generating JWT auth token
     const tokenPayload = {
-      fdoId: fdoAccount.id,
-      fdoName: fdoAccount.fdo_name,
-      phone: fdoAccount.phone,
-      username: fdoAccount.username,
-      assignedFarmIds: fdoAccount.assigned_farm_id,
-      userType: 'fdo'
+      adminId: adminLogin.id,
+      adminName: adminLogin.name,
+      phone: adminLogin.phone,
+      username: adminLogin.username,
+      userType: 'admin'
     };
 
     const authToken = jwt.sign(tokenPayload, JWT_SECRET, { 
@@ -50,13 +50,11 @@ exports.login = async (username, password) => {
       success: true,
       message: 'Login successful',
       authToken: authToken,
-      fdo: {
-        fdoId: fdoAccount.id,
-        fdoName: fdoAccount.fdo_name,
-        phone: fdoAccount.phone,
-        username: fdoAccount.username,
-        assignedFarmIds: fdoAccount.assigned_farm_id,
-        status: fdoAccount.status
+      admin: {
+        adminId: adminLogin.id,
+        adminName: adminLogin.name,
+        phone: adminLogin.phone,
+        username: adminLogin.username,
       }
     };
 
@@ -65,21 +63,20 @@ exports.login = async (username, password) => {
   }
 };
 
-exports.logout = async (fdoId) => {
+exports.logout = async (adminId) => {
   try {
-    // Update is_login to false
-    const [updatedRows] = await FdoAccount.update({
+    const [updatedRows] = await AdminLogin.update({
       is_login: false,
       last_login: new Date()
     }, {
       where: { 
-        id: fdoId,
+        id: adminId,
         is_login: true
       }
     });
 
     if (updatedRows === 0) {
-      const error = new Error('Fdo not found or already logged out');
+      const error = new Error('Admin not found or already logged out');
       error.statusCode = 404;
       throw error;
     }

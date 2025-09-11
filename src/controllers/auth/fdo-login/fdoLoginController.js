@@ -1,6 +1,6 @@
 const fdoAuthService = require('../../../services/auth/fdo-login/fdoLoginService');
 
-exports.fdoLogin = async (req, res) => {
+const fdoLogin = async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -32,16 +32,15 @@ exports.fdoLogin = async (req, res) => {
     });
 
   } catch (error) {
-    return res.status(401).json({
-      success: false,
+    res.status(error.statusCode || 500).json({
+      status: 'error',
       message: error.message
     });
   }
 };
 
-exports.fdoLogout = async (req, res) => {
+const fdoLogout = async (req, res) => {
   try {
-    // fdoId is available from JWT middleware
     const result = await fdoAuthService.logout(req.fdo.fdoId);
 
     return res.status(200).json({
@@ -50,9 +49,11 @@ exports.fdoLogout = async (req, res) => {
     });
 
   } catch (error) {
-    return res.status(400).json({
-      success: false,
+    res.status(error.statusCode || 500).json({
+      status: 'error',
       message: error.message
     });
   }
 };
+
+module.exports = { fdoLogin, fdoLogout };

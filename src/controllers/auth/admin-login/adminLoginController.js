@@ -1,10 +1,9 @@
-const fdoAuthService = require('../../../services/auth/fdo-login/fdoLoginService');
+const adminAuthService = require('../../../services/auth/admin-login/adminLoginService');
 
-exports.fdoLogin = async (req, res) => {
+const adminLogin = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Basic validation
     if (!username || !password) {
       return res.status(400).json({
         success: false,
@@ -12,37 +11,29 @@ exports.fdoLogin = async (req, res) => {
       });
     }
 
-    // Username format validation (basic)
-    if (username.length < 3) {
-      return res.status(400).json({
-        success: false,
-        message: 'Username must be at least 3 characters long'
-      });
-    }
-
-    const result = await fdoAuthService.login(username, password);
+    const result = await adminAuthService.login(username, password);
 
     return res.status(200).json({
       success: true,
       message: result.message,
       data: {
         authToken: result.authToken,
-        fdo: result.fdo
+        admin: result.admin
       }
     });
 
   } catch (error) {
-    return res.status(401).json({
-      success: false,
+    res.status(error.statusCode || 500).json({
+      status: 'error',
       message: error.message
     });
   }
 };
 
-exports.fdoLogout = async (req, res) => {
+const adminLogout = async (req, res) => {
   try {
-    // fdoId is available from JWT middleware
-    const result = await fdoAuthService.logout(req.fdo.fdoId);
+    console.log(req.admin.adminId)
+    const result = await adminAuthService.logout(req.admin.adminId);
 
     return res.status(200).json({
       success: true,
@@ -50,9 +41,11 @@ exports.fdoLogout = async (req, res) => {
     });
 
   } catch (error) {
-    return res.status(400).json({
-      success: false,
+    res.status(error.statusCode || 500).json({
+      status: 'error',
       message: error.message
     });
   }
 };
+
+module.exports = { adminLogin, adminLogout };
