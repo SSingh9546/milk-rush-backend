@@ -29,9 +29,9 @@ const getFarmDashboardCounts = async (fdoAssignedFarmId) => {
                 where: { farm_id: { [Op.in]: farmIdsArray } },
                 attributes: [
                     [fn('COUNT', col('id')), 'totalFarms'],
-                    [fn('COUNT', literal("CASE WHEN farm_status = 'ACTIVE' THEN 1 END")), 'active'],
-                    [fn('COUNT', literal("CASE WHEN farm_status = 'PIPELINE' THEN 1 END")), 'pipeline'],
-                    [fn('COUNT', literal("CASE WHEN farm_status = 'INACTIVE' THEN 1 END")), 'inactive']
+                    [fn('COUNT', literal("CASE WHEN farm_status = 'Active' THEN 1 END")), 'active'],
+                    [fn('COUNT', literal("CASE WHEN farm_status = 'Pipeline' THEN 1 END")), 'pipeline'],
+                    [fn('COUNT', literal("CASE WHEN farm_status = 'Inactive' THEN 1 END")), 'inactive']
                 ],
                 raw: true
             }),
@@ -45,16 +45,16 @@ const getFarmDashboardCounts = async (fdoAssignedFarmId) => {
                     [fn('COUNT', literal("CASE WHEN is_calf = 1 THEN 1 END")), 'calvesAnimals'],
                     
                     // Lactation status counts
-                    [fn('COUNT', literal("CASE WHEN lactation_status = 'heifers' THEN 1 END")), 'heifers'],
-                    [fn('COUNT', literal("CASE WHEN lactation_status = 'milking' THEN 1 END")), 'milking'],
-                    [fn('COUNT', literal("CASE WHEN lactation_status = 'dry' THEN 1 END")), 'dry'],
-                    [fn('COUNT', literal("CASE WHEN lactation_status = 'calf' THEN 1 END")), 'calf'],
+                    [fn('COUNT', literal("CASE WHEN lactation_status = 'Heifer' THEN 1 END")), 'heifer'],
+                    [fn('COUNT', literal("CASE WHEN lactation_status = 'Milking' THEN 1 END")), 'milking'],
+                    [fn('COUNT', literal("CASE WHEN lactation_status = 'Dry' THEN 1 END")), 'dry'],
+                    [fn('COUNT', literal("CASE WHEN lactation_status = 'Calf' THEN 1 END")), 'calf'],
                     
                     // Breeding status counts
-                    [fn('COUNT', literal("CASE WHEN breeding_status = 'bred' THEN 1 END")), 'bred'],
-                    [fn('COUNT', literal("CASE WHEN breeding_status = 'pregnant' THEN 1 END")), 'pregnant'],
-                    [fn('COUNT', literal("CASE WHEN breeding_status = 'open' THEN 1 END")), 'open'],
-                    [fn('COUNT', literal("CASE WHEN breeding_status = 'dummy' THEN 1 END")), 'dummy'],
+                    [fn('COUNT', literal("CASE WHEN breeding_status = 'Bred' THEN 1 END")), 'bred'],
+                    [fn('COUNT', literal("CASE WHEN breeding_status = 'Pregnant' THEN 1 END")), 'pregnant'],
+                    [fn('COUNT', literal("CASE WHEN breeding_status = 'Open' THEN 1 END")), 'open'],
+                    [fn('COUNT', literal("CASE WHEN breeding_status = 'N/A' THEN 1 END")), 'na'],
                     
                     // Livestock status counts
                     [fn('COUNT', literal("CASE WHEN livestock_status = 'Alive' THEN 1 END")), 'alive'],
@@ -82,7 +82,7 @@ const getFarmDashboardCounts = async (fdoAssignedFarmId) => {
                 calvesAnimals: parseInt(animalResult.calvesAnimals) || 0
             },
             lactationStatusData: {
-                heifers: parseInt(animalResult.heifers) || 0,
+                heifer: parseInt(animalResult.heifer) || 0,
                 milking: parseInt(animalResult.milking) || 0,
                 dry: parseInt(animalResult.dry) || 0,
                 calf: parseInt(animalResult.calf) || 0
@@ -91,7 +91,7 @@ const getFarmDashboardCounts = async (fdoAssignedFarmId) => {
                 bred: parseInt(animalResult.bred) || 0,
                 pregnant: parseInt(animalResult.pregnant) || 0,
                 open: parseInt(animalResult.open) || 0,
-                dummy: parseInt(animalResult.dummy) || 0
+                na: parseInt(animalResult.na) || 0
             },
             lifeStatusData: {
                 alive: parseInt(animalResult.alive) || 0,

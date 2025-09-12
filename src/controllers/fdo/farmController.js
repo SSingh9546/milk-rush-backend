@@ -30,7 +30,7 @@ const registerFarmDetails = async (req, res) => {
   }
 };
 
-const getFarmDetailsByFarmId = async (req, res) => {
+const getRegisteredFarmDetailsByFarmId = async (req, res) => {
   try {
     const { farmId } = req.params;
     const fdoAssignedFarmId = req.fdo.assignedFarmIds;
@@ -42,7 +42,42 @@ const getFarmDetailsByFarmId = async (req, res) => {
       });
     }
 
-    const result = await farmDetailsService.getFarmDetailsByFarmId(farmId, fdoAssignedFarmId);
+    const result = await farmDetailsService.getRegisteredFarmDetails(farmId, fdoAssignedFarmId);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Farm details fetched successfully',
+      data: result
+    });
+  } catch (error) {
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        success: false,
+        message: error.message
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch farm details',
+      error: error.message
+    });
+  }
+};
+
+const getNewFarmDetailsByFarmId = async (req, res) => {
+  try {
+    const { farmId } = req.params;
+    const fdoAssignedFarmId = req.fdo.assignedFarmIds;
+
+    if (!farmId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Farm ID is required'
+      });
+    }
+
+    const result = await farmDetailsService.getNewFarmDetails(farmId, fdoAssignedFarmId);
     
     res.status(200).json({
       success: true,
@@ -158,7 +193,8 @@ const getSpecificFarmDashboardData = async (req, res) => {
 
 module.exports = {
   registerFarmDetails,
-  getFarmDetailsByFarmId,
+  getRegisteredFarmDetailsByFarmId,
+  getNewFarmDetailsByFarmId,
   updateFarmDetails,
   getAllFarmAnimalsUnderFdo,
   getFdoAllFarmsDashboardData,

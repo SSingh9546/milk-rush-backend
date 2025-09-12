@@ -30,9 +30,55 @@ const adminLogin = async (req, res) => {
   }
 };
 
+const adminPasswordChange = async (req, res) => {
+  try {
+    const { old_password, new_password } = req.body;
+    const adminId = req.admin.adminId;
+
+    if (!old_password || !new_password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Old and new password are required'
+      });
+    }
+
+    const result = await adminAuthService.changePassword(adminId, old_password, new_password);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message
+    });
+
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
+const getAdminProfile = async (req, res) => {
+  try {
+    const adminId = req.admin.adminId;
+
+    const result = await adminAuthService.getProfile(adminId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Admin profile fetched successfully',
+      data: result
+    });
+
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 const adminLogout = async (req, res) => {
   try {
-    console.log(req.admin.adminId)
     const result = await adminAuthService.logout(req.admin.adminId);
 
     return res.status(200).json({
@@ -48,4 +94,9 @@ const adminLogout = async (req, res) => {
   }
 };
 
-module.exports = { adminLogin, adminLogout };
+module.exports = { 
+  adminLogin,
+  adminLogout,
+  adminPasswordChange,
+  getAdminProfile
+};

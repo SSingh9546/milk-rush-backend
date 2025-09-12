@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const AdminLogin = require('../models/stake-holder/AdminLogin');
+const AdminLogin = require('../models/stakeholder/AdminLogin');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'e3aab66d66df84c3d885a1bce2f3923df5f3121375a4632397f4d6bc068f48b6';
 

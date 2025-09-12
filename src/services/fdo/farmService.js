@@ -1,6 +1,7 @@
 const FarmDetails = require('../../models/fdo/FarmDetails');
 const FdoAccount = require('../../models/fdo/FdoAccounts');
 const FarmAnimal = require('../../models/fdo/FarmAnimals');
+const FarmerData = require('../../models/farmer/FarmerData');
 
 const createFarmDetails = async (farmData, fdoAssignedFarmId, fdoEmpId) => {
   try {
@@ -129,7 +130,33 @@ const createFarmDetails = async (farmData, fdoAssignedFarmId, fdoEmpId) => {
   }
 };
 
-const getFarmDetailsByFarmId = async (farmId, fdoAssignedFarmId) => {
+const getNewFarmDetails = async (farmId, fdoAssignedFarmId) => {
+  try {
+    if (
+      !farmId ||
+      !Array.isArray(fdoAssignedFarmId) ||
+      !fdoAssignedFarmId.some(farm => farm.farm_id === farmId)
+    ) {
+      throw new Error('Farm is not assigned to this FDO');
+    }
+
+    // Fetch details from FarmerData
+    const farmDetails = await FarmerData.findOne({
+      attributes: ['farm_id', 'farm_name', ['phone', 'farmer_phone'], 'farmer_name'],
+      where: { farm_id: farmId }
+    });
+
+    if (!farmDetails) {
+      throw new Error('Farm details not found for the given farm ID');
+    }
+
+    return farmDetails;
+  } catch (error) {
+    throw new Error(`${error.message}`);
+  }
+};
+
+const getRegisteredFarmDetails = async (farmId, fdoAssignedFarmId) => {
   try {
         if (
           !farmId ||
@@ -331,7 +358,8 @@ const getAllFarmAnimalsUnderFdo = async (fdoAssignedFarmId) => {
 
 module.exports = {
   createFarmDetails,
-  getFarmDetailsByFarmId,
+  getRegisteredFarmDetails,
+  getNewFarmDetails,
   updateFarmDetails,
   getAllFarmAnimalsUnderFdo
 };

@@ -23,9 +23,9 @@ const FarmDetails = sequelize.define('FarmDetails', {
   },
 
   farm_status: {
-    type: DataTypes.ENUM('ACTIVE', 'INACTIVE', 'PIPELINE'),
+    type: DataTypes.ENUM('Active', 'Inactive', 'Pipeline'),
     allowNull: false,
-    defaultValue: 'ACTIVE'
+    defaultValue: 'Active'
   },
 
   farmer_contact_number: {

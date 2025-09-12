@@ -8,7 +8,6 @@ const farmDetailsController = require('../../../controllers/fdo/farmController')
 const farmAnimalsController = require('../../../controllers/fdo/farmAnimalsController');
 const farmAnimalUpdateController = require('../../../controllers/fdo/farmAnimalUpdateController');
 const lactationHistoryController = require('../../../controllers/fdo/lactationHistoryController');
-const stateDistrictController = require('../../../controllers/fdo/stateDistrictController');
 const animalRulesController = require('../../../controllers/fdo/animalRulesController');
 const animalBreedController = require('../../../controllers/fdo/animalBreedController');
 
@@ -19,7 +18,8 @@ router.get('/all-fdo-data', FdoDataController.getAllFdoData);
 
 // Farm routes
 router.post('/register-farm', authenticateFdoToken, farmDetailsController.registerFarmDetails);
-router.get('/farm-details-by-farm-id/:farmId', authenticateFdoToken, farmDetailsController.getFarmDetailsByFarmId);
+router.get('/get-registered-farm-details-by-farm-id/:farmId', authenticateFdoToken, farmDetailsController.getRegisteredFarmDetailsByFarmId);
+router.get('/get-new-farm-details-by-farm-id/:farmId', authenticateFdoToken, farmDetailsController.getNewFarmDetailsByFarmId);
 router.get('/get-all-farm-animals-under-fdo', authenticateFdoToken, farmDetailsController.getAllFarmAnimalsUnderFdo);
 router.put('/update-farm-info/:farm_id', authenticateFdoToken, farmDetailsController.updateFarmDetails);
 
@@ -47,10 +47,6 @@ router.get('/get-lactation-history-details/:calving_id', authenticateFdoToken, l
 // Animal Rules route
 router.post('/animal-rule/match', animalRulesController.matchAnimalRule);
 router.get('/get-animal-rules', animalRulesController.fetchAllRules);
-
-// State and District routes
-router.get('/states', stateDistrictController.getAllStates);
-router.get('/districts/:stateId', stateDistrictController.getDistrictsByStateId);
 
 // Animal Breeds route
 router.post('/get-animal-breeds', animalBreedController.fetchBreeds);

@@ -1,4 +1,4 @@
-const AdminLogin = require('../../../models/stake-holder/AdminLogin');
+const AdminLogin = require('../../../models/stakeholder/AdminLogin');
 const jwt = require('jsonwebtoken');
 
 // JWT Configuration
@@ -20,11 +20,11 @@ exports.login = async (username, password) => {
       throw error;
     }
 
-    // if (adminLogin.is_login) {
-    //   const error = new Error('This account is already logged in on another device');
-    //   error.statusCode = 403;
-    //   throw error;
-    // }
+    if (adminLogin.is_login) {
+      const error = new Error('This account is already logged in on another device');
+      error.statusCode = 403;
+      throw error;
+    }
 
     await AdminLogin.update({
       is_login: true,
@@ -56,6 +56,63 @@ exports.login = async (username, password) => {
         phone: adminLogin.phone,
         username: adminLogin.username,
       }
+    };
+
+  } catch (error) {
+    throw error;
+  }
+};
+
+exports.changePassword = async (adminId, old_password, new_password) => {
+  try {
+    const admin = await AdminLogin.findOne({ where: { id: adminId } });
+
+    if (!admin) {
+      const error = new Error('Admin not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (admin.password !== old_password) {
+      const error = new Error('Old password is incorrect');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    await AdminLogin.update(
+      { password: new_password },
+      { where: { id: adminId } }
+    );
+
+    return {
+      success: true,
+      message: 'Password changed successfully'
+    };
+
+  } catch (error) {
+    throw error;
+  }
+};
+
+exports.getProfile = async (adminId) => {
+  try {
+    const admin = await AdminLogin.findOne({
+      where: { id: adminId },
+      attributes: ['id', 'name', 'username', 'phone', 'last_login']
+    });
+
+    if (!admin) {
+      const error = new Error('Admin not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return {
+      adminId: admin.id,
+      adminName: admin.name,
+      username: admin.username,
+      phone: admin.phone,
+      lastLogin: admin.last_login
     };
 
   } catch (error) {

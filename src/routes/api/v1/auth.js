@@ -22,6 +22,8 @@ router.post('/fdo-logout', authenticateFdoToken, fdoLoginController.fdoLogout);
 
 // Routes for Admin Login
 router.post('/admin-login', adminLoginController.adminLogin);
+router.post('/admin-password-change', authenticateAdminToken, adminLoginController.adminPasswordChange);
+router.post('/get-admin-profile', authenticateAdminToken, adminLoginController.getAdminProfile);
 router.post('/admin-logout', authenticateAdminToken, adminLoginController.adminLogout);
 
 router.get('/', (req, res) => {
