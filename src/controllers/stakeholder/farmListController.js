@@ -1,11 +1,18 @@
-const dashboardService = require('../../services/stakeholder/dashboardService');
+const farmListService = require('../../services/stakeholder/farmListService');
 
-const getDashboardCounts = async (req, res) => {
+const getfarmListWithFilters = async (req, res) => {
   try {
     const filters = {
-      farm_ids: req.body.farm_ids || [],
+      // fdo_accounts filter
+      is_new: typeof req.body.is_new !== 'undefined' ? req.body.is_new : null,
 
-      // normalize to array
+      // farm_details filters
+      farm_ids: Array.isArray(req.body.farm_ids)
+        ? req.body.farm_ids
+        : req.body.farm_ids
+        ? [req.body.farm_ids]
+        : [],
+
       farm_status: Array.isArray(req.body.farm_status)
         ? req.body.farm_status
         : req.body.farm_status
@@ -28,12 +35,12 @@ const getDashboardCounts = async (req, res) => {
       to_date: req.body.to_date || null
     };
 
-    const data = await dashboardService.getDashboardCounts(filters);
+    const farms = await farmListService.getFarmListData(filters);
 
     return res.status(200).json({
       success: true,
-      message: 'Dashboard counts fetched successfully',
-      data
+      message: 'Farm details fetched successfully',
+      data: farms
     });
   } catch (error) {
     res.status(error.statusCode || 500).json({
@@ -43,4 +50,4 @@ const getDashboardCounts = async (req, res) => {
   }
 };
 
-module.exports = { getDashboardCounts };
+module.exports = { getfarmListWithFilters };

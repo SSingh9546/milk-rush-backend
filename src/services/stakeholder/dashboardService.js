@@ -1,34 +1,47 @@
 const { Op, fn, col, literal } = require('sequelize');
 const FarmDetails = require('../../models/fdo/FarmDetails');
 const FarmAnimal = require('../../models/fdo/FarmAnimals');
-const FdoAccount = require('../../models/fdo/FdoAccounts');
-const FarmerData = require('../../models/farmer/FarmerData');
 
 exports.getDashboardCounts = async (filters) => {
   try {
     const { farm_ids, farm_status, state, district, from_date, to_date } = filters;
 
-    // Step 1: Build farmWhere with all filters
+    // ----------------------------
+    // Step 1: Build farmWhere with multi-value support
+    // ----------------------------
     const farmWhere = {};
 
+    // Farm IDs (multi)
     if (farm_ids && farm_ids.length > 0) {
       farmWhere.farm_id = { [Op.in]: farm_ids };
     }
 
-    if (farm_status) {
-      const normalizedStatus =
-        farm_status.charAt(0).toUpperCase() + farm_status.slice(1).toLowerCase();
-      farmWhere.farm_status = normalizedStatus;
+    // Farm Status (multi + normalization)
+    if (farm_status && farm_status.length > 0) {
+      const normalizedStatuses = farm_status.map(s =>
+        s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+      );
+      farmWhere.farm_status = { [Op.in]: normalizedStatuses };
     }
 
-    if (state) farmWhere.state = state;
-    if (district) farmWhere.district = district;
+    // State (multi)
+    if (state && state.length > 0) {
+      farmWhere.state = { [Op.in]: state };
+    }
 
+    // District (multi)
+    if (district && district.length > 0) {
+      farmWhere.district = { [Op.in]: district };
+    }
+
+    // Date range
     if (from_date && to_date) {
       farmWhere.createdAt = { [Op.between]: [from_date, to_date] };
     }
 
-    // Step 2: Query FarmDetails once to get matching farm_ids
+    // ----------------------------
+    // Step 2: Get matching farms
+    // ----------------------------
     const matchingFarms = await FarmDetails.findAll({
       where: farmWhere,
       attributes: ['farm_id'],
@@ -37,25 +50,21 @@ exports.getDashboardCounts = async (filters) => {
 
     const farmIdList = matchingFarms.map(f => f.farm_id);
 
-    // If no farms match, return zero counts safely
-    if (farmIdList.length === 0) {
-      return {
-        farmData: { totalFarms: 0, active: 0, pipeline: 0, inactive: 0 },
-        farmAnimalData: { totalAnimals: 0, adultAnimals: 0, calvesAnimals: 0 },
-        lactationStatusData: { heifers: 0, milking: 0, dry: 0, calf: 0 },
-        breedingStatusData: { bred: 0, pregnant: 0, open: 0, dummy: 0 },
-        lifeStatusData: { alive: 0, dead: 0, culled: 0, sold: 0 }
-      };
+    // ----------------------------
+    // Step 3: Build animalWhere
+    // ----------------------------
+    const animalWhere = {};
+    if (farmIdList.length > 0) {
+      animalWhere.farm_id = { [Op.in]: farmIdList };
     }
-
-    // Step 3: Build animalWhere based only on farmIdList (and optional date filter)
-    const animalWhere = { farm_id: { [Op.in]: farmIdList } };
 
     if (from_date && to_date) {
       animalWhere.createdAt = { [Op.between]: [from_date, to_date] };
     }
 
-    // ✅ Farm counts
+    // ----------------------------
+    // Step 4: Farm counts
+    // ----------------------------
     const farmCounts = await FarmDetails.findOne({
       where: farmWhere,
       attributes: [
@@ -67,7 +76,9 @@ exports.getDashboardCounts = async (filters) => {
       raw: true
     });
 
-    // ✅ Farm animal counts
+    // ----------------------------
+    // Step 5: Animal counts
+    // ----------------------------
     const animalCounts = await FarmAnimal.findOne({
       where: animalWhere,
       attributes: [
@@ -78,7 +89,9 @@ exports.getDashboardCounts = async (filters) => {
       raw: true
     });
 
-    // ✅ Lactation status counts
+    // ----------------------------
+    // Step 6: Lactation counts
+    // ----------------------------
     const lactationCounts = await FarmAnimal.findOne({
       where: animalWhere,
       attributes: [
@@ -90,7 +103,9 @@ exports.getDashboardCounts = async (filters) => {
       raw: true
     });
 
-    // ✅ Breeding status counts
+    // ----------------------------
+    // Step 7: Breeding counts
+    // ----------------------------
     const breedingCounts = await FarmAnimal.findOne({
       where: animalWhere,
       attributes: [
@@ -102,7 +117,9 @@ exports.getDashboardCounts = async (filters) => {
       raw: true
     });
 
-    // ✅ Livestock status counts
+    // ----------------------------
+    // Step 8: Livestock counts
+    // ----------------------------
     const livestockCounts = await FarmAnimal.findOne({
       where: animalWhere,
       attributes: [
@@ -114,17 +131,18 @@ exports.getDashboardCounts = async (filters) => {
       raw: true
     });
 
+    // ----------------------------
+    // Step 9: Return
+    // ----------------------------
     return {
-      farmData: farmCounts,
-      farmAnimalData: animalCounts,
-      lactationStatusData: lactationCounts,
-      breedingStatusData: breedingCounts,
-      lifeStatusData: livestockCounts
+      farmData: farmCounts || { totalFarms: 0, active: 0, pipeline: 0, inactive: 0 },
+      farmAnimalData: animalCounts || { totalAnimals: 0, adultAnimals: 0, calvesAnimals: 0 },
+      lactationStatusData: lactationCounts || { heifers: 0, milking: 0, dry: 0, calf: 0 },
+      breedingStatusData: breedingCounts || { bred: 0, pregnant: 0, open: 0, dummy: 0 },
+      lifeStatusData: livestockCounts || { alive: 0, dead: 0, culled: 0, sold: 0 }
     };
 
   } catch (error) {
     throw error;
   }
 };
-
-
