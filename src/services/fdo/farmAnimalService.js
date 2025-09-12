@@ -241,8 +241,19 @@ const registerAnimal = async (animalData, fdoAssignedFarmId) => {
             const e = new Error('pd_check_date is required');
             e.statusCode = 400; throw e;
         }
+
+        // Find the current insemination record for this calving
+        const currentInsemination = await InseminationHistory.findOne({
+            where: { calving_id: current.id, is_current: true },
+            order: [['createdAt', 'DESC']],
+            transaction
+        });
+        
+        const inseminationId = currentInsemination ? currentInsemination.id : null;
+
         await PregnancyHistory.create({
-            calving_id: current.id,                                       
+            calving_id: current.id,
+            insemination_id: inseminationId,                                       
             pd_check_date: animalData.pd_check_date,
             pd_check_time: animalData.pd_check_time ?? null,
             pregnancy_result: animalData.pregnancy_result ?? null,
